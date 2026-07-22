@@ -1,11 +1,7 @@
 import Link from "next/link";
-import {
-  getDevice,
-  getOptions,
-  type DeviceDetail as DeviceDetailT,
-  type Options,
-} from "@/lib/api";
-import DeviceDetail from "@/components/DeviceDetail";
+import { getDevice, type DeviceDetail as DeviceDetailT } from "@/lib/api/inventory";
+import { getOptions, type Options } from "@/lib/api/options";
+import DeviceDetail from "@/components/device/DeviceDetail";
 
 export const dynamic = "force-dynamic";
 

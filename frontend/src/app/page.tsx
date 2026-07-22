@@ -1,10 +1,6 @@
-import {
-  getInventory,
-  getOptions,
-  type InventoryItem,
-  type Options,
-} from "@/lib/api";
-import InventoryView from "@/components/InventoryView";
+import { getInventory, type InventoryItem } from "@/lib/api/inventory";
+import { getOptions, type Options } from "@/lib/api/options";
+import InventoryView from "@/components/inventory/InventoryView";
 
 // Always render fresh from the DB — inventory changes as repairs progress.
 export const dynamic = "force-dynamic";

@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createPurchase, updatePurchase } from "@/app/actions";
-import type { Options, Purchase } from "@/lib/api";
-import Modal from "./Modal";
-import { TextCombobox } from "./Combobox";
+import type { Options } from "@/lib/api/options";
+import type { Purchase } from "@/lib/api/purchases";
+import Modal from "@/components/ui/Modal";
+import { TextCombobox } from "@/components/ui/Combobox";
 
 // Record a buy event as it happens: "ebay order 111-1231312, $55.42, 2x DS4".
 // Device rows link to it afterward via the device form's purchase combobox.

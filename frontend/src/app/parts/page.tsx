@@ -1,5 +1,6 @@
-import PurchasesView from "@/components/PurchasesView";
-import { getOptions, getPurchases, type Options, type Purchase } from "@/lib/api";
+import PurchasesView from "@/components/purchases/PurchasesView";
+import { getOptions, type Options } from "@/lib/api/options";
+import { getPurchases, type Purchase } from "@/lib/api/purchases";
 
 export const dynamic = "force-dynamic";
 

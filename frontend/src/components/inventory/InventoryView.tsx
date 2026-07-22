@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { InventoryItem, Options, Purchase } from "@/lib/api";
+import type { InventoryItem } from "@/lib/api/inventory";
+import type { Options } from "@/lib/api/options";
+import type { Purchase } from "@/lib/api/purchases";
 import { bandClass, formatDate, formatPrice } from "@/lib/format";
 import DeviceModal from "./DeviceModal";
 import { purchaseLabel } from "./DeviceForm";
-import { Pagination, usePagination } from "./Pagination";
-import { SortTh, applySort, useSort } from "./sorting";
+import { Pagination, usePagination } from "@/components/ui/Pagination";
+import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
 // Compact handle for a buy event: ledger id ("0004") first, then order ref.
 export function purchaseShort(p: Purchase): string {

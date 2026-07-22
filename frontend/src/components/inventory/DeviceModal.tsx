@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createDevice, updateDevice } from "@/app/actions";
-import type { InventoryItem, Options } from "@/lib/api";
-import Modal from "./Modal";
+import type { InventoryItem } from "@/lib/api/inventory";
+import type { Options } from "@/lib/api/options";
+import Modal from "@/components/ui/Modal";
 import { DeviceFields, useDeviceForm } from "./DeviceForm";
 
 // item === null => create mode; item set => edit mode.

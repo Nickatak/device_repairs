@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkCreateDevices } from "@/app/actions";
-import type { Options, Purchase } from "@/lib/api";
-import Modal from "./Modal";
+import type { Options } from "@/lib/api/options";
+import type { Purchase } from "@/lib/api/purchases";
+import Modal from "@/components/ui/Modal";
 import { CREATE_STATUSES, ReferenceCombobox, purchaseLabel } from "./DeviceForm";
-import { TextCombobox } from "./Combobox";
+import { TextCombobox } from "@/components/ui/Combobox";
 
 // "3x controllers arrived" → spawn N identical device rows from this purchase.
 // Per-unit identity (model #, serial) is refined on each row afterward.

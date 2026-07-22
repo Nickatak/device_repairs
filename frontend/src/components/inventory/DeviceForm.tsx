@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { InventoryItem, Options, Purchase, ReferenceOption } from "@/lib/api";
+import type { InventoryItem } from "@/lib/api/inventory";
+import type { Options, ReferenceOption } from "@/lib/api/options";
+import type { Purchase } from "@/lib/api/purchases";
 import type { DeviceWrite } from "@/app/actions";
-import { Combobox, TextCombobox } from "./Combobox";
+import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 
 // New devices default to shipped: a row exists once it's bought and/or inbound.
 const EMPTY = {

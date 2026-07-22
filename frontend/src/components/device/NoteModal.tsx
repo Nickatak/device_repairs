@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createNote, updateNote } from "@/app/actions";
-import type { Note } from "@/lib/api";
-import Modal from "./Modal";
+import type { Note } from "@/lib/api/repairlog";
+import Modal from "@/components/ui/Modal";
 
 export type NoteModalState =
   | { mode: "create"; repairId: number; nextPosition: number }

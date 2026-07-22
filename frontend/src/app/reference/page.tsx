@@ -1,5 +1,5 @@
-import { getLanes, getReference, type Lane, type ReferenceItem } from "@/lib/api";
-import ReferenceView from "@/components/ReferenceView";
+import { getLanes, getReference, type Lane, type ReferenceItem } from "@/lib/api/reference";
+import ReferenceView from "@/components/reference/ReferenceView";
 
 // The sheet changes with every comp pull — always fetch fresh.
 export const dynamic = "force-dynamic";

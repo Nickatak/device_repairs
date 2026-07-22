@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompPull, Lane, ReferenceItem } from "@/lib/api";
-import { Pagination, usePagination } from "./Pagination";
+import type { CompPull, Lane, ReferenceItem } from "@/lib/api/reference";
+import { Pagination, usePagination } from "@/components/ui/Pagination";
 
 // Lanes with a dedicated badge color; everything else falls back to .cat-other.
 const COLORED_LANES = new Set([

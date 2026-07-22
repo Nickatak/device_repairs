@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Options, Purchase } from "@/lib/api";
+import type { Options } from "@/lib/api/options";
+import type { Purchase } from "@/lib/api/purchases";
 import { formatDate, formatPrice } from "@/lib/format";
 import PurchaseModal from "./PurchaseModal";
-import BulkAddModal from "./BulkAddModal";
-import { Pagination, usePagination } from "./Pagination";
-import { SortTh, applySort, useSort } from "./sorting";
+import BulkAddModal from "@/components/inventory/BulkAddModal";
+import { Pagination, usePagination } from "@/components/ui/Pagination";
+import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
 type ModalState =
   | { mode: "create" }
