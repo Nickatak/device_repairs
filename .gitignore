@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Django
+*.sqlite3
+backend/media/
+backend/staticfiles/
+
+# Env — only the template and committed examples are tracked
+.env
+.env.local
+.env.prod
+.env.backup.*
+
+# Logs
+logs/
+*.log
+
+# Tooling
+.ruff_cache/
+.pytest_cache/
+.coverage
+
+# OS / editor
+.DS_Store
+
+# Untracked project context hub + assistant config (references local machine paths)
+scratch/
+.claude/
+
+# Frozen ledger snapshots — order refs, seller handles, sale history stay local.
+# device_reference_seed.json (device-model knowledge only) stays tracked.
+backend/repairs/data/device_purchases.csv
+backend/repairs/data/device_units.csv
+backend/repairs/data/price_sheet_seed.json

@@ -1,0 +1,12 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — soft 120 cap, not worth blocking on
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*" = ["E501", "F401"]

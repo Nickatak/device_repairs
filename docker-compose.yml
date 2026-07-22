@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-device_repair}
+      POSTGRES_USER: ${POSTGRES_USER:-repair}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-repair_password}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-repair} -d ${POSTGRES_DB:-device_repair}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: python:3.12-slim
+    working_dir: /app/backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-repair}:${POSTGRES_PASSWORD:-repair_password}@db:5432/${POSTGRES_DB:-device_repair}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-dev-only-change-me}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1},backend
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - media_data:/app/backend/media
+    command: >-
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    image: node:24-alpine
+    working_dir: /app/frontend
+    restart: unless-stopped
+    environment:
+      # Server-side fetches hit the backend over the compose network (no browser CORS).
+      SERVER_API_BASE_URL: ${SERVER_API_BASE_URL:-http://backend:8000/api/v1}
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    command: >-
+      sh -c "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+
+volumes:
+  pg_data:
+  media_data:
+  frontend_node_modules:
