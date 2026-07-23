@@ -114,8 +114,12 @@ export default function PurchasesView({
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [arrival, setArrival] = useState<"all" | "onhand" | "inbound">("all");
   const [mismatchOnly, setMismatchOnly] = useState(false);
-  // Default view: most recently arrived first (unknown arrivals at the bottom).
-  const { sort, toggle } = useSort<SortKey>({ key: "arrived", dir: -1 });
+  // Default view — device lots: most recently PURCHASED first (the buy event is
+  // the ledger's grain); parts orders: most recently arrived (arrival is the
+  // state that tab answers). Unknown dates sort to the bottom either way.
+  const { sort, toggle } = useSort<SortKey>(
+    parts ? { key: "arrived", dir: -1 } : { key: "purchased", dir: -1 },
+  );
 
   const sources = useMemo(
     () => [...new Set(purchases.map((p) => p.source ?? "—"))].sort(),
