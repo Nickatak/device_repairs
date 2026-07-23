@@ -139,7 +139,7 @@ export default function PurchasesView({
     <main className="wide">
       <header className="page-head">
         <div>
-          <h1>{parts ? "Parts" : "Purchases"}</h1>
+          <h1>{parts ? "Parts Orders" : "Purchases"}</h1>
           <p className="subtitle">
             {filtered
               ? `${visible.length} of ${purchases.length} ${parts ? "parts orders" : "buy events"}`
