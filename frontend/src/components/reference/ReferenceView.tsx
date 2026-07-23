@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { CompPull, Lane, ReferenceItem } from "@/lib/api/reference";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
+import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
 // Lanes with a dedicated badge color; everything else falls back to .cat-other.
 const COLORED_LANES = new Set([
@@ -33,6 +34,26 @@ function money(value: string | null): string {
 function latestWorking(item: ReferenceItem): CompPull | null {
   // comp_pulls arrive newest-first from the API.
   return item.comp_pulls.find((p) => p.kind === "working") ?? null;
+}
+
+type SortKey = "model" | "lane" | "stop" | "comp" | "pulled";
+
+function sortValue(item: ReferenceItem, key: SortKey): string | number | null {
+  switch (key) {
+    case "model":
+      return item.brand ? `${item.brand} ${item.name}` : item.name;
+    case "lane":
+      return item.lane;
+    case "stop":
+      return item.stop_price !== null ? Number(item.stop_price) : null;
+    case "comp": {
+      const median = latestWorking(item)?.median ?? null;
+      return median !== null ? Number(median) : null;
+    }
+    case "pulled":
+      // ISO dates sort correctly as strings.
+      return latestWorking(item)?.pulled_on ?? null;
+  }
 }
 
 function matches(item: ReferenceItem, query: string): boolean {
@@ -110,6 +131,7 @@ export default function ReferenceView({
   // Default view = rows with a working comp; toggling off adds the rest back.
   const [hasCompOnly, setHasCompOnly] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const { sort, toggle } = useSort<SortKey>();
 
   const doctrine = lanes.find((l) => l.name === "doctrine");
   const selectedLane = lanes.find((l) => l.name === lane);
@@ -123,17 +145,17 @@ export default function ReferenceView({
   const staleCount = useMemo(() => items.filter((it) => it.stale).length, [items]);
   const gapCount = useMemo(() => items.filter((it) => it.gap).length, [items]);
 
-  const filtered = useMemo(
-    () =>
-      items.filter(
-        (it) =>
-          (lane === "all" || it.lane === lane) &&
-          (!staleOnly || it.stale) &&
-          (!hasCompOnly || !it.gap) &&
-          matches(it, query),
-      ),
-    [items, query, lane, staleOnly, hasCompOnly],
-  );
+  const filtered = useMemo(() => {
+    const rows = items.filter(
+      (it) =>
+        (lane === "all" || it.lane === lane) &&
+        (!staleOnly || it.stale) &&
+        (!hasCompOnly || !it.gap) &&
+        matches(it, query),
+    );
+    applySort(rows, sort, sortValue);
+    return rows;
+  }, [items, query, lane, staleOnly, hasCompOnly, sort]);
 
   const pager = usePagination(filtered);
 
@@ -219,11 +241,11 @@ export default function ReferenceView({
             <table>
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th>Lane</th>
-                  <th className="num">Stop</th>
-                  <th className="num">Working comp</th>
-                  <th>Pulled</th>
+                  <SortTh label="Model" k="model" sort={sort} onToggle={toggle} />
+                  <SortTh label="Lane" k="lane" sort={sort} onToggle={toggle} />
+                  <SortTh label="Stop" k="stop" sort={sort} onToggle={toggle} className="num" />
+                  <SortTh label="Working comp" k="comp" sort={sort} onToggle={toggle} className="num" />
+                  <SortTh label="Pulled" k="pulled" sort={sort} onToggle={toggle} />
                 </tr>
               </thead>
               <tbody>
