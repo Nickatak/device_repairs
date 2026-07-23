@@ -161,7 +161,13 @@ class Measurement(models.Model):
 
 
 class Part(models.Model):
-    """Consumed into the board at a Note; counts toward the device's parts cost.
+    """Consumed into the board at a Note. Free text, no money, no stock link.
+
+    ASPIRATIONAL (Nick, 2026-07-23): "counts toward the device's parts cost"
+    is the intent, not the implementation — there is no cost field and no
+    relationship to Purchase(kind=parts) or to any stock entity yet. The join
+    (purchases feed stock, Parts draw from it) is the future materials/stock
+    migration.
 
     A corrective note may record consumed Parts or none at all — 'fix' != 'install a part'.
     """
