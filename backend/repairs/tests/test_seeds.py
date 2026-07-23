@@ -96,6 +96,38 @@ class SeedPurchasesTests(TestCase):
         self.assertEqual(Purchase.objects.count(), count)
 
 
+class SeedRepairsTests(TestCase):
+    """The converted bench logs: idempotent, phase-dated, note/measurement upserts."""
+
+    def test_seed_is_idempotent_and_backdates(self):
+        call_command("seed_purchases")
+        call_command("seed_units")
+        call_command("seed_repairs")
+        from repairs.models import Measurement, Note, Repair
+
+        repairs = Repair.objects.count()
+        notes = Note.objects.count()
+        measurements = Measurement.objects.count()
+        self.assertGreater(repairs, 10)
+
+        call_command("seed_repairs")
+        self.assertEqual(Repair.objects.count(), repairs)
+        self.assertEqual(Note.objects.count(), notes)
+        self.assertEqual(Measurement.objects.count(), measurements)
+
+        # A known conversion: 0017-2's POST read with its termination codes.
+        repair = Repair.objects.get(device__ledger_ref="0017-2")
+        self.assertEqual(repair.created_at.date().isoformat(), "2026-07-05")
+        self.assertIsNotNone(repair.teardown_done_at)
+        self.assertIsNone(repair.completed_at)  # still open
+        post = repair.notes.get(title="POST-over-I2C read")
+        self.assertIn("BOOT_SUCCESS", post.measurements.get().value)
+        # Completed engagements carry the manual mark.
+        self.assertIsNotNone(
+            Repair.objects.get(device__ledger_ref="0027").completed_at
+        )
+
+
 class SeedUnitsTests(TestCase):
     """The units import: idempotent, lot-linking, status/label mapping."""
 

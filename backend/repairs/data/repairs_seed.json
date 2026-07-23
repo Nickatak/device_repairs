@@ -1,0 +1,223 @@
+[
+  {
+    "ledger_ref": "0004-1",
+    "repair": {
+      "created": "2026-07-10",
+      "phases": {
+        "repair": ["2026-07-11", "Refurb + hall mod."],
+        "verify": ["2026-07-12", "Full QC passed across BT, jack output, and mic path."]
+      },
+      "completed": "2026-07-12",
+      "notes": [
+        { "position": 1, "title": "BT pairing + headset jack QC", "started": "2026-07-11", "text": "Both PASSED. Jack drove DT770s quietly — expected into studio-can impedance; jack test = USB path.", "measurements": [] },
+        { "position": 2, "title": "Speaker verdict saga", "started": "2026-07-11", "text": "'Non-functional' verdict RETRACTED — PC bench cannot address the DS4 speaker. Battery-tap: clean pop + free cone travel; driver-level pass, amp chain unexercised. Survived the ultrasonic dunk.", "measurements": [ { "what": "Speaker voice coil", "value": "10 Ω" } ] },
+        { "position": 3, "title": "Mic path QC", "started": "2026-07-12", "text": "PASSED via TRRS earbuds — closes the TRS-only test gap. Output quiet-but-clear = systemic DS4-on-PC-USB profile, not unit fault.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0004-2",
+    "repair": {
+      "created": "2026-07-12",
+      "phases": {
+        "repair": ["2026-07-12", "Refurb + hall mod."],
+        "verify": ["2026-07-12", "Jack full QC (TRRS: output both channels at the systemic-quiet level + mic PASSED) + BT pairing PASSED."]
+      },
+      "completed": "2026-07-12",
+      "notes": []
+    }
+  },
+  {
+    "ledger_ref": "0004-3",
+    "repair": {
+      "created": "2026-07-03",
+      "phases": {
+        "repair": ["2026-07-03", "Arrived pre-hall-modded by prior owner with defective joints (anemic + icicled) — reworked; motor wire trimmed/re-terminated; reset switch held by deformed battery housing — heat-reformed. No hall stock consumed (prior owner's mod kept)."],
+        "reassemble": ["2026-07-03", ""],
+        "verify": ["2026-07-12", "Acceptance: touch no dead spots, all inputs, charging OK. Jack full QC + BT pairing PASSED 2026-07-12 (TRRS: audio + mic at the systemic-quiet level)."]
+      },
+      "completed": "2026-07-12",
+      "notes": [
+        { "position": 1, "title": "Daughterboard ultrasonic recovery", "started": "2026-07-03", "text": "Smoker port revived by ultrasonic clean.", "measurements": [] },
+        { "position": 2, "title": "Touchboard transplant", "started": "2026-07-03", "text": "Touchboard dead → cross-rev transplant from 0005-3 (ZCT1U donor; 10-pin fits ZCT2U — interchange exception n=1).", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0004-4",
+    "repair": {
+      "created": "2026-07-12",
+      "phases": {
+        "repair": ["2026-07-12", "Repaired + hall-modded."]
+      },
+      "notes": [
+        { "position": 1, "title": "QC catch — 3.5mm jack left channel dead", "started": "2026-07-12", "text": "Right OK; QUIET symptom ruled SYSTEMIC same day via A/B vs CTRL_1 with the same TRRS earbuds. Differential narrowed to the tip net: in-barrel lint-stop/tip leaf vs tip pin joint vs trace. Jack NOT resoldered at rebuild; underside joints visually good. NOT sale-ready until the left channel is resolved.", "measurements": [] },
+        { "position": 2, "title": "Battery donated", "started": "2026-07-12", "text": "Pack donated to 0024-1/CTRL_5 — replace from the 10-pack on arrival.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0010",
+    "repair": {
+      "created": "2026-06-09",
+      "phases": {
+        "repair": ["2026-06-09", "Dates approximate — reconstructed from the repair-log doc."],
+        "verify": ["2026-06-09", "Tested working."]
+      },
+      "completed": "2026-07-01",
+      "notes": [
+        { "position": 1, "title": "ESD diode replacement", "started": "2026-06-09", "text": "D252 (1N4148W) replaced + tested working.", "measurements": [] },
+        { "position": 2, "title": "USB-C receptacle rebuild", "started": "2026-06-09", "text": "Shorted receptacle — USB-C to JST/USB-C breakout rebuild.", "measurements": [] },
+        { "position": 3, "title": "U-switch round-trip", "started": "2026-06-09", "text": "", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0011-2",
+    "repair": {
+      "created": "2026-07-06",
+      "phases": {
+        "teardown": ["2026-07-06", "Warranty sticker off — screw sizing + no-power triage. Fully disassembled."],
+        "wash": ["2026-07-06", "Fleet WiFi/RF boards batch-cleaned same day: soap+water US -> distilled rinse -> IPA beaker US."]
+      },
+      "notes": [
+        { "position": 1, "title": "PSU no-load test", "started": "2026-07-06", "text": "Tested good — differential shifts to board/RF/wake path.", "measurements": [ { "what": "PSU 12V rail (no-load)", "value": "12 V flat" } ] },
+        { "position": 2, "title": "Standby rails", "started": "2026-07-06", "text": "Power entry + standby regulation good.", "measurements": [ { "what": "Standby rails 5V / 1.8V / 1.1V", "value": "all alive" } ] },
+        { "position": 3, "title": "Wake test", "started": "2026-07-06", "text": "First jump = insta on/off chime (cause unknown — logged, not cleared); second+ = boots clean. VIDEO OUT WORKING. E106 bench boot with no HDD.", "measurements": [] },
+        { "position": 4, "title": "HDD reinstall — full OS boot", "started": "2026-07-06", "text": "Boots to Who's-playing screen. Original OS intact; prior-owner profiles present — factory-reset/wipe before sale.", "measurements": [] },
+        { "position": 5, "title": "Remaining work", "text": "RF board + power button test; burn-in vs the one insta-off; HDMI-OUT port swap (floppy — to_buy); reassembly.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0017-1",
+    "repair": {
+      "created": "2026-07-04",
+      "phases": {
+        "teardown": ["2026-07-04", ""]
+      },
+      "completed": "2026-07-08",
+      "notes": [
+        { "position": 1, "title": "Mainboard proven functional", "started": "2026-07-04", "text": "Boots to E106 no-HDD screen with the RF board unplugged; wake via R4F15.2-pad-to-GND jump.", "measurements": [] },
+        { "position": 2, "title": "RF board 5V short root-caused", "started": "2026-07-04", "text": "C76 + C78 decoupling MLCCs internally shorted by liquid damage (sweet-drink corrosion) — both pulled, short GONE. Board corrosion-remediated (scrape + wash).", "measurements": [] },
+        { "position": 3, "title": "RF-board repair abandoned", "started": "2026-07-08", "text": "Damage tally too deep to spend known-good parts on: receiver missing, C76/C78 out, corrosion ate ≥2 pads (scraped out), IR receiver footprint unpopulated, one R4 pad lifted. DEMOTED to experiment fodder — first up: no-rinse residue experiment (half-rinse internal control; leakage/dendrite observation under current-limited bias). Frankenstein revival only if a second dead RF board ever surfaces (donor-pair).", "measurements": [] },
+        { "position": 4, "title": "Disposition", "started": "2026-07-08", "text": "Shelved pending 0017-2 triage (chassis allocation) + HDMI ports from CN (port feels weak — swap before sale). Housing trashed / no screws — sell path = donor chassis or board-only, not retail shell (retail-shell price kills margin).", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0017-2",
+    "repair": {
+      "created": "2026-07-05",
+      "phases": {
+        "teardown": ["2026-07-05", ""]
+      },
+      "notes": [
+        { "position": 1, "title": "Power section acquitted", "started": "2026-07-05", "text": "11 rails/signals verified good (ladder in standby-probe-map.md + bottom-probe-map.html); repasted; PSU cross-validated.", "measurements": [] },
+        { "position": 2, "title": "POST-over-I2C read", "started": "2026-07-06", "text": "Pico on J4E1.25/26 (PicoDurangoPOST v0.3.0; log scratch/firmware/post-log-0017-2.txt): FULL BOOT SUCCESS — SP+2BL+CPU chain clean, zero error codes, ran past the old 1-2min shutdown window. SUPERSEDED: 'APU never computes' (executed full secure boot in 1.5s). NAND-corruption front-runner DEMOTED — boot-critical eMMC reads perfectly; chip-off likely unnecessary.", "measurements": [ { "what": "POST termination codes", "value": "CPU 0x14FF + SP 0x0075 = BOOT_SUCCESS" } ] },
+        { "position": 3, "title": "USB liveness test", "started": "2026-07-06", "text": "Wired controller, calibrated vs 0011-2-at-E106 (which binds on Xbox-button press): DEAF on all 3 USB ports, both wake paths; boot ladders byte-identical ×3; alive-durations variable (13m/2m/1.3m) → POST-HANDOFF SOFTWARE ENVIRONMENT NOT RUNNING. Parsimony: one software-tier fault = no video + no USB bind; TDP158 demoted.", "measurements": [] },
+        { "position": 4, "title": "SATA connector damage", "started": "2026-07-07", "text": "Housing gone, pins bent (harvester rip); pins removed clean. Grounds CERTIFIED (beeps stand) but the no-bridge reading is DEMOTED (taken with faulty needle leads — false-negative risk): re-verify bridges with certified stock leads before connector install. SATA-absent boot = same symptoms — mangled-connector-as-cause FALSIFIED. Borrowed-HDD test blocked on SATA repair; SMT SATA connectors ordered. Direct-solder bodge documented, not executed.", "measurements": [ { "what": "J5B1 HDD power (pins 1/2)", "value": "5.05 V switched", "comment": "pins 3/4 = GND; mapped + live-verified" } ] },
+        { "position": 5, "title": "HDMI port harvest — EG8B6 trace peel", "started": "2026-07-10", "text": "Both ports hot-aired off as donors (board mentally written off). EG8B6 (SP3010 HDMI-out ESD array) DISLODGED with ~10mm trace peel, chip still tethered mid-strand. VERDICT: bench damage during the pull (bright unoxidized copper along the peel + freshly-reflowed domed solder on vacated pads + chip-on-a-hair could not have survived the unit's history). Pre-existing-video-break theory DEAD; the 07-06 one-software-fault parsimony STANDS. Lesson: kapton/foil small DFNs in the nozzle wash before pulling connectors. SP3010 recoverable as free spare (snip free, verify top-mark vs intact twin EG8B7, check held pin for ridden copper). Trace-repair log docs/microsoldering/eg8b6-trace-repair-0017-2.md.", "measurements": [] },
+        { "position": 6, "title": "Next steps", "text": "On unshelf: SATA install/bodge → borrowed-HDD + controller-bind discriminator; spare-Pico A/B on 0011-2; eMMC recovery-tier read; wake source still unknown. Re-shelved pending trace-repair consumables. Donor-port legs need inspection before install in 0011-2/0017-1. Chassis best in lot; RF board pristine. Pico tap left soldered (ends taped). Probe-map caveat: J5C1.7 = S1 north-most, palindrome caveat in the probe map doc.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0024-1",
+    "repair": {
+      "created": "2026-07-10",
+      "phases": {
+        "teardown": ["2026-07-10", "Intake: red shell, no serial sticker."],
+        "repair": ["2026-07-12", "Rebuilt — fully working across the board. Battery = donated pack from 0004-4/CTRL_6 (ZCT2U-origin pack fits; battery-connector compat confirmed). Displaced mule pack → bench battery pool."],
+        "verify": ["2026-07-12", "Jack full QC (3.5mm audio + mic, TRRS) + BT pairing PASSED."]
+      },
+      "notes": [
+        { "position": 1, "title": "Root cause", "started": "2026-07-12", "text": "Dead-on-USB = daughterboard FPC seating (reseated → enumerates) + battery 0V at intake (storage lockout).", "measurements": [] },
+        { "position": 2, "title": "Reopened — touchpad defect", "started": "2026-07-15", "text": "Touchpad TOUCH not registering (DualShock tester; click OK). Differential: touchpad FPC seating first (unit's signature fault mode; shell was reopened post-QC for the battery donation), then ribbon/connector damage (prior-repair suspicion), then donor pad swap. Unclear whether touch was in the 07-12 QC scope — if not, may predate the rebuild.", "measurements": [] },
+        { "position": 3, "title": "Bench sweep", "started": "2026-07-21", "text": "Fully reassembled; touchpad still NON-WORKING (defect stands; whether an FPC reseat was re-attempted this pass is unlogged). Next differential steps: ribbon/connector damage, then donor pad swap. ZCT2-family board per USB-audio fingerprint. Interior near-pristine + missing sticker + half-seated FPC = suspected prior repair attempt (precedent: 0004-3 arrived pre-modded).", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0024-2",
+    "repair": {
+      "created": "2026-07-16",
+      "phases": {
+        "teardown": ["2026-07-16", "Color pinned + rev silkscreen-read JDM-030. Blue-top/black-bottom = no stock colorway match — reads as prior shell swap."],
+        "repair": ["2026-07-19", "Reassembled with working big-IC touchboard (big-IC-on-030 confirmed n=2). All functions PASS except: battery life weak (swap candidate; 10-pack inbound) and audio untested at the time."]
+      },
+      "notes": [
+        { "position": 1, "title": "Frankenstein plan", "started": "2026-07-16", "text": "Candidate with 0024-4 (also JDM-030; smoker-ruined films/rubber) — a clean donor set makes one completable unit now, carcass rejoins the queue when inbound 030 consumables land. Survivor/donor + shell choice = bench call; choices still unlogged if the 07-19 rebuild was the franken execution.", "measurements": [] },
+        { "position": 2, "title": "Audio gate resolved as N/A", "started": "2026-07-21", "text": "Windows non-enumeration as an audio device = EXPECTED v1 behavior, not a fault — v1/05C4 exposes zero USB audio interfaces. The jack is untestable on a PC bench; oracle = PS4 or Sony wireless adaptor. Remaining gate = battery only; jack sale-readiness call = Nick's.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0024-3",
+    "repair": {
+      "created": "2026-07-16",
+      "phases": {
+        "teardown": ["2026-07-16", "Color pinned + rev silkscreen-read JDM-040 — second magma red in lot 0024 (sibling to 0024-1/CTRL_5). Special colorway: comp before listing."]
+      },
+      "notes": [
+        { "position": 1, "title": "055-film-on-040 experiment", "started": "2026-07-16", "text": "Install the on-hand JDS-055 film on this 040 board (film looks near-identical) — if it fits, the unit completes from on-hand stock and the film-family map extends beyond the listing split.", "measurements": [] },
+        { "position": 2, "title": "Executing — film fit confirmed", "started": "2026-07-21", "text": "055 film physically mates with the 040 board. Visual read at start: rubbers are CERTAINLY 030/040-family, not 055 — covered by on-hand JDS-030-family rubber sets. Teardown observations: 030/040 rubbers physically shared; plastic buttons fit the same slots across revs. Remaining: button QC post-rebuild.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0024-4",
+    "repair": {
+      "created": "2026-07-16",
+      "phases": {
+        "teardown": ["2026-07-16", "Color pinned + rev silkscreen-read JDM-030. Smoker damage — films/rubber ruined, replacement REQUIRED (root blocker)."]
+      },
+      "notes": [
+        { "position": 1, "title": "Blocked on consumables", "started": "2026-07-16", "text": "030-family films + rubbers inbound (AliExpress wave, un-arrived as of 07-16) — parked until they land. Possible partial cover on hand: JDS-030/055 daughterboard 10-pack (needs rev-sort) if the micro-B fix applies. Frankenstein-donor candidate with 0024-2.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0026",
+    "repair": {
+      "created": "2026-07-07",
+      "phases": {},
+      "notes": [
+        { "position": 1, "title": "8-pin partial beep-map", "started": "2026-07-07", "text": "3 GND on the bottom row; LED lights from [0][3]-GND in diode mode = 12V-net indicator circuit intact. Trio beep + rail map PENDING with certified leads (needle-probe readings void).", "measurements": [] },
+        { "position": 2, "title": "Differential", "text": "Fans-spin-no-video class: core/mem rail vs GDDR6 vs BIOS vs link vs core — cold rail map first. PCB CG1737P Rev1.00 (verify silkscreen); boardview exists.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0027",
+    "repair": {
+      "created": "2026-07-08",
+      "phases": {
+        "teardown": ["2026-07-10", "Full teardown to bare."],
+        "wash": ["2026-07-10", "Ultrasonic clean."],
+        "reassemble": ["2026-07-10", ""],
+        "verify": ["2026-07-10", "Synced via clone receiver — all buttons verified working."]
+      },
+      "completed": "2026-07-10",
+      "notes": [
+        { "position": 1, "title": "Intake sync test", "started": "2026-07-08", "text": "Arrived with the PC wireless receiver — doubled as the receiver's QC pairing target: sync test = receiver QC + unit intake test in one act.", "measurements": [] },
+        { "position": 2, "title": "Deferred", "started": "2026-07-10", "text": "Motor JST 2-pin PTH connectors NOT resolder-repped (adjacent soft plastic) — deferred to FR-301 arrival.", "measurements": [] }
+      ]
+    }
+  },
+  {
+    "ledger_ref": "0029-1",
+    "repair": {
+      "created": "2026-07-11",
+      "phases": {
+        "teardown": ["2026-07-11", "FIRST DS5 teardown — color + rev read off unit/silkscreen (BDM-020)."],
+        "repair": ["2026-07-12", ""],
+        "reassemble": ["2026-07-12", ""]
+      },
+      "completed": "2026-07-12",
+      "notes": [
+        { "position": 1, "title": "First DS5 full rebuild", "started": "2026-07-12", "text": "Completed. TMR-module recount flag stands on the parts inventory row — consumption on this job unconfirmed in the books.", "measurements": [] }
+      ]
+    }
+  }
+]
