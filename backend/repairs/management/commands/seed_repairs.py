@@ -51,10 +51,13 @@ class Command(BaseCommand):
             )
             if repair is None:
                 repair = Repair.objects.create(device=device)
-                Repair.objects.filter(pk=repair.pk).update(created_at=created)
                 repairs_created += 1
             else:
                 repairs_updated += 1
+            # Set on the instance so the save() below persists it — auto_now_add
+            # only fires on insert; a queryset-update here would be clobbered by
+            # the instance's stale value at save time.
+            repair.created_at = created
 
             for key in PHASE_KEYS:
                 phase = spec.get("phases", {}).get(key)
