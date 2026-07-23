@@ -767,6 +767,32 @@ ol.subnotes {
   border-color: var(--border);
   margin-left: 8px;
 }
+/* Hot-issue verdict chips: avoid = red (walk away), caution = amber,
+   buy = green (in-lane fault, symptom-decoded buy). */
+.issue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 10px;
+}
+.badge.issue-avoid {
+  background: #33101d;
+  color: #ff90ac;
+  border-color: #551d33;
+}
+.badge.issue-caution {
+  background: #3a2e10;
+  color: #f7d78b;
+  border-color: #5c4a1d;
+}
+.badge.issue-buy {
+  background: #10331f;
+  color: #71e6a0;
+  border-color: #1d5535;
+}
+.issue-counts {
+  color: var(--muted);
+}
 .ref-chip.flag-stale.active {
   color: #f7d78b;
   background: #3a2e10;

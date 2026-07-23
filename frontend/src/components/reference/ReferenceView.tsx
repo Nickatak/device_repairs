@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompPull, Lane, ReferenceItem } from "@/lib/api/reference";
+import type { CompPull, Issue, Lane, ReferenceItem } from "@/lib/api/reference";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
@@ -74,6 +74,38 @@ function matches(item: ReferenceItem, query: string): boolean {
     .toLowerCase()
     .split(/\s+/)
     .every((term) => haystack.includes(term));
+}
+
+// Avoid first — the money-saver when scanning listings — then caution, then buy.
+const VERDICT_ORDER: Issue["verdict"][] = ["avoid", "caution", "buy"];
+
+function IssueChips({ issues }: { issues: Issue[] }) {
+  const ordered = VERDICT_ORDER.flatMap((v) =>
+    issues.filter((i) => i.verdict === v),
+  );
+  return (
+    <div className="issue-chips">
+      {ordered.map((issue) => (
+        <span
+          key={issue.id}
+          className={`badge issue-${issue.verdict}`}
+          title={issue.note || issue.verdict_display}
+        >
+          {issue.title}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// Compact per-verdict tally for the collapsed row's sub-line.
+function issueCounts(issues: Issue[]): string {
+  return VERDICT_ORDER.map((v) => {
+    const n = issues.filter((i) => i.verdict === v).length;
+    return n ? `${n} ${v}` : null;
+  })
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function PullHistory({ pulls }: { pulls: CompPull[] }) {
@@ -267,6 +299,9 @@ export default function ReferenceView({
                             <span className="ref-modelnum">{it.sku_prefix}</span>
                           )}
                           {it.memory_config && <> {it.memory_config}</>}
+                          {it.issues.length > 0 && (
+                            <span className="issue-counts"> {issueCounts(it.issues)}</span>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -294,6 +329,7 @@ export default function ReferenceView({
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
                         <td colSpan={5}>
+                          {it.issues.length > 0 && <IssueChips issues={it.issues} />}
                           {it.stop_note && (
                             <p className="ref-configs">
                               <strong>Stop:</strong> {it.stop_note}

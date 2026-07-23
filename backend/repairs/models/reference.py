@@ -100,6 +100,44 @@ class DeviceReference(models.Model):
         return f"{self.brand} {self.name}".strip()
 
 
+class Issue(models.Model):
+    """One known issue on a catalog row, with a buy verdict — the structured
+    form of the notes prose's 'In-lane: X / Avoid: Y' conventions.
+
+    The quick-list this feeds answers the listing-scan question: seller says
+    <symptom> — do I buy? buy = in-lane, I fix this class; avoid = walk away;
+    caution = conditional (read the note). Same append-a-row grain as CompPull;
+    the notes prose stays free-form color, never the fact of record for verdicts.
+    """
+
+    class Verdict(models.TextChoices):
+        BUY = "buy", "Buy — in-lane fault"
+        AVOID = "avoid", "Avoid — walk away"
+        CAUTION = "caution", "Caution — read the note"
+
+    reference = models.ForeignKey(
+        DeviceReference, on_delete=models.CASCADE, related_name="issues"
+    )
+    verdict = models.CharField(max_length=10, choices=Verdict.choices)
+    title = models.CharField(
+        max_length=120,
+        help_text="Chip text — short symptom/fault handle ('HDMI port dead', 'APU BGA').",
+    )
+    note = models.TextField(
+        blank=True,
+        help_text="The detail behind the verdict ('reflow is temporary — walk away as a flip').",
+    )
+    position = models.PositiveIntegerField(
+        default=0, help_text="Manual ordering within the reference's list."
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return f"[{self.verdict}] {self.title} — {self.reference}"
+
+
 class CompPull(models.Model):
     """One market observation for a catalog row. Append-only: current = latest.
 

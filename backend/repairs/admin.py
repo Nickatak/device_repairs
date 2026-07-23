@@ -10,6 +10,7 @@ from .models import (
     CompPull,
     Device,
     DeviceReference,
+    Issue,
     Lane,
     Location,
     Measurement,
@@ -101,6 +102,14 @@ class LocationAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
 
+class IssueInline(admin.TabularInline):
+    """The hot-issues quick-list: verdict + short title per known fault."""
+
+    model = Issue
+    extra = 0
+    fields = ("verdict", "title", "note", "position")
+
+
 class CompPullInline(admin.TabularInline):
     """Newest-first pull history on the catalog row. Append rows; don't edit history."""
 
@@ -125,7 +134,7 @@ class DeviceReferenceAdmin(admin.ModelAdmin):
     search_fields = ("brand", "name", "model_numbers", "sku_prefix", "configurations")
     ordering = ("lane__name", "brand", "release_year", "name")
     autocomplete_fields = ("lane",)
-    inlines = (CompPullInline,)
+    inlines = (IssueInline, CompPullInline)
 
 
 @admin.register(CompPull)

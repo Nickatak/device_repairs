@@ -17,6 +17,16 @@ export interface CompPull {
   note: string;
 }
 
+// One known issue with a buy verdict — the listing-scan quick-list's row.
+export interface Issue {
+  id: number;
+  verdict: "buy" | "avoid" | "caution";
+  verdict_display: string;
+  title: string;
+  note: string;
+  position: number;
+}
+
 export interface ReferenceItem {
   id: number;
   lane: string;
@@ -31,6 +41,7 @@ export interface ReferenceItem {
   stop_note: string;
   notes: string;
   comp_pulls: CompPull[];
+  issues: Issue[];
   stale: boolean;
   gap: boolean;
 }

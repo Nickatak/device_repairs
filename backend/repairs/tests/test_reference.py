@@ -72,6 +72,26 @@ class StaleGapTests(TestCase):
         self.assertFalse(data["stale"])
 
 
+class IssueTests(TestCase):
+    """The hot-issues quick-list: verdict-typed rows on the catalog payload."""
+
+    def test_reference_payload_carries_ordered_issues(self):
+        ref = make_ref()
+        ref.issues.create(verdict="avoid", title="APU BGA", position=2)
+        ref.issues.create(
+            verdict="buy", title="HDMI port dead", note="reworkable", position=1
+        )
+        row = next(
+            r for r in self.client.get("/api/v1/reference/").json() if r["id"] == ref.pk
+        )
+        self.assertEqual(
+            [(i["verdict"], i["title"]) for i in row["issues"]],
+            [("buy", "HDMI port dead"), ("avoid", "APU BGA")],
+        )
+        self.assertEqual(row["issues"][0]["note"], "reworkable")
+        self.assertEqual(row["issues"][1]["verdict_display"], "Avoid — walk away")
+
+
 class CompPullGrainTests(TestCase):
     def test_one_pull_per_kind_per_day(self):
         ref = make_ref()

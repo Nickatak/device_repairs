@@ -38,6 +38,7 @@ class DeviceDetailView(RetrieveUpdateAPIView):
     ).prefetch_related(
         "repairs__notes__measurements",
         "repairs__notes__subnotes__measurements",
+        "reference__issues",
     )
 
     def get_serializer_class(self):

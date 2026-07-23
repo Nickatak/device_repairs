@@ -25,6 +25,7 @@ from .reference import (
     STALE_AFTER_DAYS,
     CompPullSerializer,
     DeviceReferenceSerializer,
+    IssueSerializer,
     LaneSerializer,
 )
 from .repairlog import (
@@ -51,6 +52,7 @@ __all__ = [
     "ExitSerializer",
     "ExitWriteSerializer",
     "InventoryDeviceSerializer",
+    "IssueSerializer",
     "LaneSerializer",
     "MeasurementSerializer",
     "MeasurementWriteSerializer",

@@ -10,7 +10,9 @@ class ReferenceListView(ListAPIView):
     """GET = the full catalog + price sheet. Search/filter is done client-side."""
 
     serializer_class = DeviceReferenceSerializer
-    queryset = DeviceReference.objects.select_related("lane").prefetch_related("comp_pulls")
+    queryset = DeviceReference.objects.select_related("lane").prefetch_related(
+        "comp_pulls", "issues"
+    )
 
 
 class LaneListView(ListAPIView):
