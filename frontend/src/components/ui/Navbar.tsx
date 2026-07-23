@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Tab order mirrors the pipeline: research it → buy it → work it.
-// Parts trail the pipeline — they feed repairs, not inventory.
+// Purchases is a combo page (device lots + stock purchases as in-page tabs);
+// Stock trails the pipeline — buckets feed repairs, not inventory.
 const LINKS = [
   { href: "/reference", label: "Reference" },
   { href: "/purchases", label: "Purchases" },
   { href: "/", label: "Inventory" },
-  { href: "/parts", label: "Parts Orders" },
   { href: "/stock", label: "Stock" },
 ];
 

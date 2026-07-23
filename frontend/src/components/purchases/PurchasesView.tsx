@@ -89,6 +89,8 @@ export default function PurchasesView({
   initialQuery = "",
   kind = "device",
   cash = null,
+  title = null,
+  tabs = null,
 }: {
   purchases: Purchase[];
   options: Options;
@@ -97,6 +99,9 @@ export default function PurchasesView({
   kind?: Purchase["kind"];
   // Whole-project cash position (money in vs out) — /purchases only.
   cash?: CashSummary | null;
+  // Combo-page hooks: a stable h1 override + the tab bar rendered above the header.
+  title?: string | null;
+  tabs?: React.ReactNode;
 }) {
   const parts = kind === "parts";
   const purchases = useMemo(
@@ -137,9 +142,10 @@ export default function PurchasesView({
 
   return (
     <main className="wide">
+      {tabs}
       <header className="page-head">
         <div>
-          <h1>{parts ? "Parts Orders" : "Purchases"}</h1>
+          <h1>{title ?? (parts ? "Parts Orders" : "Purchases")}</h1>
           <p className="subtitle">
             {filtered
               ? `${visible.length} of ${purchases.length} ${parts ? "parts orders" : "buy events"}`

@@ -1,4 +1,4 @@
-import PurchasesView from "@/components/purchases/PurchasesView";
+import PurchasesCombo from "@/components/purchases/PurchasesCombo";
 import { getCash, type CashSummary } from "@/lib/api/cash";
 import { getOptions, type Options } from "@/lib/api/options";
 import { getPurchases, type Purchase } from "@/lib/api/purchases";
@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function PurchasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; tab?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, tab } = await searchParams;
   let purchases: Purchase[] = [];
   let options: Options = {
     references: [],
@@ -33,12 +33,13 @@ export default async function PurchasesPage({
   }
 
   return (
-    <PurchasesView
+    <PurchasesCombo
       purchases={purchases}
       options={options}
+      cash={cash}
       error={error}
       initialQuery={q ?? ""}
-      cash={cash}
+      initialTab={tab === "parts" ? "parts" : "device"}
     />
   );
 }

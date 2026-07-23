@@ -1,38 +1,12 @@
-import PurchasesView from "@/components/purchases/PurchasesView";
-import { getOptions, type Options } from "@/lib/api/options";
-import { getPurchases, type Purchase } from "@/lib/api/purchases";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function PartsPage({
+// The standalone parts page folded into /purchases as its Stock Purchases tab
+// (2026-07-23). Old links and bookmarks land there.
+export default async function PartsRedirect({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  let purchases: Purchase[] = [];
-  let options: Options = {
-    references: [],
-    locations: [],
-    sources: [],
-    people: [],
-    purchases: [],
-    statuses: [],
-  };
-  let error: string | null = null;
-  try {
-    [purchases, options] = await Promise.all([getPurchases(), getOptions()]);
-  } catch (e) {
-    error = e instanceof Error ? e.message : "Unknown error";
-  }
-
-  return (
-    <PurchasesView
-      purchases={purchases}
-      options={options}
-      error={error}
-      initialQuery={q ?? ""}
-      kind="parts"
-    />
-  );
+  redirect(`/purchases?tab=parts${q ? `&q=${encodeURIComponent(q)}` : ""}`);
 }

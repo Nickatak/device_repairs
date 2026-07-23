@@ -94,6 +94,32 @@ main.wide {
   border-color: var(--accent-border);
 }
 
+/* Combo-page tab bar (Purchases: device lots vs stock purchases) — underline
+   tabs, visually heavier than the filter chips below them. */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--accent-border);
+}
+.page-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+.page-tab:hover {
+  color: var(--accent);
+}
+.page-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent-strong);
+}
+
 .page-head {
   display: flex;
   align-items: flex-start;
