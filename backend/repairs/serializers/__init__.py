@@ -27,6 +27,7 @@ from .reference import (
     DeviceReferenceSerializer,
     IssueSerializer,
     LaneSerializer,
+    VariantSerializer,
 )
 from .repairlog import (
     COMPLETED_REPAIR_ERROR,
@@ -65,4 +66,5 @@ __all__ = [
     "RepairCreateSerializer",
     "RepairWithNotesSerializer",
     "RepairWriteSerializer",
+    "VariantSerializer",
 ]

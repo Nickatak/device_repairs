@@ -3,7 +3,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from repairs.models import CompPull, DeviceReference, Issue, Lane
+from repairs.models import CompPull, DeviceReference, Issue, Lane, Variant
 
 # The sheet's refresh discipline: a working comp older than this is due for a re-pull.
 STALE_AFTER_DAYS = 60
@@ -15,13 +15,22 @@ class LaneSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "policy"]
 
 
+class VariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Variant
+        fields = ["id", "name", "note", "position"]
+
+
 class CompPullSerializer(serializers.ModelSerializer):
     kind_display = serializers.CharField(source="get_kind_display", read_only=True)
+    variant_name = serializers.CharField(source="variant.name", read_only=True, default=None)
 
     class Meta:
         model = CompPull
         fields = [
             "id",
+            "variant",
+            "variant_name",
             "kind",
             "kind_display",
             "median",
@@ -65,6 +74,7 @@ class DeviceReferenceSerializer(serializers.ModelSerializer):
     lane = serializers.CharField(source="lane.name", read_only=True)
     comp_pulls = CompPullSerializer(many=True, read_only=True)
     issues = IssueSerializer(many=True, read_only=True)
+    variants = VariantSerializer(many=True, read_only=True)
     stale = serializers.SerializerMethodField()
     gap = serializers.SerializerMethodField()
 
@@ -85,14 +95,17 @@ class DeviceReferenceSerializer(serializers.ModelSerializer):
             "notes",
             "comp_pulls",
             "issues",
+            "variants",
             "stale",
             "gap",
         ]
 
     def _latest_working(self, obj):
         # comp_pulls is prefetched and ordered -pulled_on, so first match is latest.
+        # Base-model pulls only: a fresh variant comp doesn't satisfy the
+        # standard model's refresh rule.
         for pull in obj.comp_pulls.all():
-            if pull.kind == CompPull.Kind.WORKING:
+            if pull.kind == CompPull.Kind.WORKING and pull.variant_id is None:
                 return pull
         return None
 

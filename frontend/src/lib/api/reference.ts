@@ -2,8 +2,19 @@
 
 import { API_BASE } from "./client";
 
+// A visual/special variant of the base model — same model number, different
+// shell and price band. Pricing arrives via variant-scoped comp pulls.
+export interface Variant {
+  id: number;
+  name: string;
+  note: string;
+  position: number;
+}
+
 export interface CompPull {
   id: number;
+  variant: number | null;
+  variant_name: string | null;
   kind: string;
   kind_display: string;
   median: string | null;
@@ -45,6 +56,7 @@ export interface ReferenceItem {
   notes: string;
   comp_pulls: CompPull[];
   issues: Issue[];
+  variants: Variant[];
   stale: boolean;
   gap: boolean;
 }

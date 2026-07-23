@@ -150,12 +150,52 @@ class Issue(models.Model):
         return f"[{self.verdict}] {self.fault} → {self.cause or '?'} — {self.reference}"
 
 
+class Variant(models.Model):
+    """A visual/special variant of a catalog model — same model number, same
+    repair profile, different shell and price band (GoW Edition, Rose Gold).
+
+    Identity + spotting knowledge only: faults and stops stay on the base
+    reference. Pricing structure comes from comp pulls carrying an optional
+    variant link. The lot-pile rule this feeds: pull premium variants out
+    before standard processing.
+    """
+
+    reference = models.ForeignKey(
+        DeviceReference, on_delete=models.CASCADE, related_name="variants"
+    )
+    name = models.CharField(
+        max_length=120, help_text="'Gears of War Edition', 'Rose Gold', 'Crystal'."
+    )
+    note = models.TextField(
+        blank=True,
+        help_text="Spotting details + premium reasoning ('$45-65 vs $30 standard class').",
+    )
+    position = models.PositiveIntegerField(
+        default=0, help_text="Manual ordering within the reference's list."
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reference", "name"], name="unique_variant_per_reference"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} — {self.reference}"
+
+
 class CompPull(models.Model):
     """One market observation for a catalog row. Append-only: current = latest.
 
     A new pull is a new row, never an edit of an old one — that's how revision history
     ('$150 → $134') stays free. Compound sheet cells that don't reduce to the structured
     fields land verbatim in `note` (zero-information-loss rule).
+
+    `variant` scopes a pull to a special edition (null = the base/standard
+    model). Base-model staleness/gap worklists ignore variant pulls — a fresh
+    Rose Gold comp doesn't satisfy the standard model's refresh rule.
     """
 
     class Kind(models.TextChoices):
@@ -170,6 +210,14 @@ class CompPull(models.Model):
 
     reference = models.ForeignKey(
         DeviceReference, on_delete=models.CASCADE, related_name="comp_pulls"
+    )
+    variant = models.ForeignKey(
+        Variant,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comp_pulls",
+        help_text="Special-edition scope for this pull. Null = base/standard model.",
     )
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.WORKING)
     median = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -194,11 +242,19 @@ class CompPull(models.Model):
 
     class Meta:
         ordering = ["-pulled_on", "-id"]
+        # Split by variant-null because NULLs never collide in a plain unique
+        # constraint — base pulls need their own uniqueness rule.
         constraints = [
             models.UniqueConstraint(
                 fields=["reference", "kind", "pulled_on"],
-                name="one_pull_per_kind_per_day",
-            )
+                condition=models.Q(variant__isnull=True),
+                name="one_base_pull_per_kind_per_day",
+            ),
+            models.UniqueConstraint(
+                fields=["reference", "variant", "kind", "pulled_on"],
+                condition=models.Q(variant__isnull=False),
+                name="one_variant_pull_per_kind_per_day",
+            ),
         ]
 
     def __str__(self):

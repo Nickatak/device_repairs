@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompPull, Issue, Lane, ReferenceItem } from "@/lib/api/reference";
+import type { CompPull, Issue, Lane, ReferenceItem, Variant } from "@/lib/api/reference";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
@@ -32,8 +32,11 @@ function money(value: string | null): string {
 }
 
 function latestWorking(item: ReferenceItem): CompPull | null {
-  // comp_pulls arrive newest-first from the API.
-  return item.comp_pulls.find((p) => p.kind === "working") ?? null;
+  // comp_pulls arrive newest-first from the API. Base-model pulls only —
+  // a variant comp doesn't stand in for the standard model's price.
+  return (
+    item.comp_pulls.find((p) => p.kind === "working" && p.variant === null) ?? null
+  );
 }
 
 type SortKey = "model" | "lane" | "stop" | "comp" | "pulled";
@@ -123,6 +126,22 @@ function issueCounts(issues: Issue[]): string {
     .join(" · ");
 }
 
+// The lot-pile signal: this model has premium variants — pull them out before
+// standard processing.
+function VariantChips({ variants }: { variants: Variant[] }) {
+  return (
+    <p className="ref-configs">
+      <strong>Variants:</strong>{" "}
+      {variants.map((v, i) => (
+        <span key={v.id} title={v.note || undefined}>
+          {i > 0 && " · "}
+          {v.name}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function PullHistory({ pulls }: { pulls: CompPull[] }) {
   if (pulls.length === 0) {
     return <p className="ref-notes">No comp pulls recorded yet — pull before first buy.</p>;
@@ -132,6 +151,7 @@ function PullHistory({ pulls }: { pulls: CompPull[] }) {
       <thead>
         <tr>
           <th>Pulled</th>
+          <th>Variant</th>
           <th>Kind</th>
           <th className="num">Median</th>
           <th className="num">p25–p75</th>
@@ -146,6 +166,7 @@ function PullHistory({ pulls }: { pulls: CompPull[] }) {
         {pulls.map((p) => (
           <tr key={p.id}>
             <td className="ref-year">{p.pulled_on}</td>
+            <td>{p.variant_name ?? "—"}</td>
             <td>{p.kind_display}</td>
             <td className="num">{money(p.median)}</td>
             <td className="num">
@@ -344,6 +365,7 @@ export default function ReferenceView({
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
                         <td colSpan={5}>
+                          {it.variants.length > 0 && <VariantChips variants={it.variants} />}
                           {it.issues.length > 0 && <IssueTable issues={it.issues} />}
                           {it.stop_note && (
                             <p className="ref-configs">

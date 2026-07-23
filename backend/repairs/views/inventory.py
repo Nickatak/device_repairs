@@ -39,6 +39,8 @@ class DeviceDetailView(RetrieveUpdateAPIView):
         "repairs__notes__measurements",
         "repairs__notes__subnotes__measurements",
         "reference__issues",
+        "reference__variants",
+        "reference__comp_pulls__variant",
     )
 
     def get_serializer_class(self):

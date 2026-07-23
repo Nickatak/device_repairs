@@ -20,6 +20,7 @@ from .models import (
     Purchase,
     Repair,
     Source,
+    Variant,
 )
 
 
@@ -110,12 +111,20 @@ class IssueInline(admin.TabularInline):
     fields = ("category", "fault", "cause", "verdict", "note", "position")
 
 
+class VariantInline(admin.TabularInline):
+    """Special editions of this model — same model number, different shell/price band."""
+
+    model = Variant
+    extra = 0
+    fields = ("name", "note", "position")
+
+
 class CompPullInline(admin.TabularInline):
     """Newest-first pull history on the catalog row. Append rows; don't edit history."""
 
     model = CompPull
     extra = 0
-    fields = ("kind", "median", "p25", "p75", "n", "window_days", "velocity_per_day", "verified", "pulled_on", "note")
+    fields = ("variant", "kind", "median", "p25", "p75", "n", "window_days", "velocity_per_day", "verified", "pulled_on", "note")
 
 
 @admin.register(Lane)
@@ -134,7 +143,7 @@ class DeviceReferenceAdmin(admin.ModelAdmin):
     search_fields = ("brand", "name", "model_numbers", "sku_prefix", "configurations")
     ordering = ("lane__name", "brand", "release_year", "name")
     autocomplete_fields = ("lane",)
-    inlines = (IssueInline, CompPullInline)
+    inlines = (VariantInline, IssueInline, CompPullInline)
 
 
 @admin.register(CompPull)

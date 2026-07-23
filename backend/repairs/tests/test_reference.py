@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from repairs.models import CompPull, DeviceReference, Issue
+from repairs.models import CompPull, DeviceReference, Issue, Variant
 from repairs.serializers import DeviceReferenceSerializer
 
 from .helpers import make_ref
@@ -119,6 +119,44 @@ class SeedIssuesTests(TestCase):
         self.assertEqual(rrod.cause, "GPU/CPU BGA solder failure")
         self.assertEqual(rrod.verdict, "avoid")
         self.assertIn("Reflow is temporary", rrod.note)
+
+
+class VariantTests(TestCase):
+    """Variants: identity rows on the base reference; pulls gain a variant scope."""
+
+    def test_variant_pull_coexists_with_base_pull_same_day(self):
+        ref = make_ref()
+        gow = Variant.objects.create(reference=ref, name="Gears of War Edition")
+        today = timezone.localdate()
+        CompPull.objects.create(reference=ref, kind=CompPull.Kind.WORKING, pulled_on=today)
+        CompPull.objects.create(
+            reference=ref, variant=gow, kind=CompPull.Kind.WORKING, pulled_on=today
+        )  # must not collide with the base pull
+        with self.assertRaises(IntegrityError):
+            CompPull.objects.create(
+                reference=ref, variant=gow, kind=CompPull.Kind.WORKING, pulled_on=today
+            )
+
+    def test_variant_pull_does_not_satisfy_base_staleness(self):
+        # A reference whose ONLY working pull is variant-scoped is still a gap.
+        ref = make_ref()
+        rose = Variant.objects.create(reference=ref, name="Rose Gold")
+        CompPull.objects.create(
+            reference=ref, variant=rose, kind=CompPull.Kind.WORKING,
+            pulled_on=timezone.localdate(),
+        )
+        row = next(
+            r for r in self.client.get("/api/v1/reference/").json() if r["id"] == ref.pk
+        )
+        self.assertTrue(row["gap"])
+        self.assertEqual(row["variants"][0]["name"], "Rose Gold")
+        self.assertEqual(row["comp_pulls"][0]["variant_name"], "Rose Gold")
+
+    def test_duplicate_variant_name_rejected(self):
+        ref = make_ref()
+        Variant.objects.create(reference=ref, name="Pink")
+        with self.assertRaises(IntegrityError):
+            Variant.objects.create(reference=ref, name="Pink")
 
 
 class CompPullGrainTests(TestCase):

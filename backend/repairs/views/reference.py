@@ -11,7 +11,7 @@ class ReferenceListView(ListAPIView):
 
     serializer_class = DeviceReferenceSerializer
     queryset = DeviceReference.objects.select_related("lane").prefetch_related(
-        "comp_pulls", "issues"
+        "comp_pulls__variant", "issues", "variants"
     )
 
 
