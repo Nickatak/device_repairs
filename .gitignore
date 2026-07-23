@@ -37,3 +37,4 @@ backend/repairs/data/device_purchases.csv
 backend/repairs/data/device_units.csv
 backend/repairs/data/price_sheet_seed.json
 backend/repairs/data/parts_seed.json
+backend/repairs/data/stock_seed.json

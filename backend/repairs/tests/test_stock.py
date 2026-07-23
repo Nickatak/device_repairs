@@ -160,6 +160,42 @@ class DeviceRevisionTests(TestCase):
         self.assertEqual(res.status_code, 400)
 
 
+class SeedStockTests(TestCase):
+    def test_seed_is_idempotent_and_resolves_fits(self):
+        make_ref(name="DualShock 4 (v1)", brand="Sony")
+        make_ref(name="DualShock 4 (v2)", brand="Sony")
+        call_command("seed_revisions")
+
+        call_command("seed_stock")
+        count = StockItem.objects.count()
+        self.assertGreater(count, 80)
+
+        # A counted, rev-linked bucket: the thin 050/055 rubber runway.
+        runway = StockItem.objects.get(
+            name="DS4 conductive rubber sets JDS-050/055 family (leftover stock)"
+        )
+        self.assertEqual(runway.mode, StockItem.Mode.COUNTED)
+        self.assertEqual(runway.count, 6)
+        self.assertEqual(
+            {r.name for r in runway.fits_revisions.all()}, {"JDM-050", "JDM-055"}
+        )
+        # Jellybeans land presence with no arithmetic.
+        screws = StockItem.objects.get(
+            name="M2.5x0.45 x 6mm machine screws (black-slot substitute)"
+        )
+        self.assertEqual(screws.mode, StockItem.Mode.PRESENCE)
+        self.assertIsNone(screws.count)
+        # Consolidation-pending rows: counted mode, no base — the worklist badge.
+        membranes = StockItem.objects.get(
+            name="Silicone membranes (DS4, all-rev sets + leftovers)"
+        )
+        self.assertEqual(membranes.mode, StockItem.Mode.COUNTED)
+        self.assertIsNone(membranes.count)
+
+        call_command("seed_stock")
+        self.assertEqual(StockItem.objects.count(), count)
+
+
 class SeedRevisionsTests(TestCase):
     def test_seed_is_idempotent_and_maps_families(self):
         make_ref(name="DualShock 4 (v1)", brand="Sony")
