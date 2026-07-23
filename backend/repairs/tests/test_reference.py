@@ -2,11 +2,12 @@
 
 import datetime
 
+from django.core.management import call_command
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from repairs.models import CompPull, DeviceReference
+from repairs.models import CompPull, DeviceReference, Issue
 from repairs.serializers import DeviceReferenceSerializer
 
 from .helpers import make_ref
@@ -73,23 +74,51 @@ class StaleGapTests(TestCase):
 
 
 class IssueTests(TestCase):
-    """The hot-issues quick-list: verdict-typed rows on the catalog payload."""
+    """The symptom-decomposition table: category|fault|cause|verdict rows on the payload."""
 
     def test_reference_payload_carries_ordered_issues(self):
         ref = make_ref()
-        ref.issues.create(verdict="avoid", title="APU BGA", position=2)
         ref.issues.create(
-            verdict="buy", title="HDMI port dead", note="reworkable", position=1
+            category="Board", fault="Dead console, power OK", cause="APU BGA",
+            verdict="avoid", position=2,
+        )
+        ref.issues.create(
+            category="Display", fault="No signal", cause="HDMI port",
+            verdict="buy", note="reworkable", position=1,
         )
         row = next(
             r for r in self.client.get("/api/v1/reference/").json() if r["id"] == ref.pk
         )
         self.assertEqual(
-            [(i["verdict"], i["title"]) for i in row["issues"]],
-            [("buy", "HDMI port dead"), ("avoid", "APU BGA")],
+            [(i["category"], i["fault"], i["cause"], i["verdict"]) for i in row["issues"]],
+            [
+                ("Display", "No signal", "HDMI port", "buy"),
+                ("Board", "Dead console, power OK", "APU BGA", "avoid"),
+            ],
         )
         self.assertEqual(row["issues"][0]["note"], "reworkable")
         self.assertEqual(row["issues"][1]["verdict_display"], "Avoid — walk away")
+
+
+class SeedIssuesTests(TestCase):
+    """The issues seed: real data file, idempotent, keyed on (reference, fault, cause)."""
+
+    def test_seed_is_idempotent_against_real_catalog(self):
+        call_command("seed_reference", verbosity=0)
+        call_command("seed_pricesheet", verbosity=0)
+        call_command("seed_issues", verbosity=0)
+        count = Issue.objects.count()
+        self.assertGreater(count, 200)  # the hand-converted table is ~290 rows
+        call_command("seed_issues", verbosity=0)
+        self.assertEqual(Issue.objects.count(), count)
+        # A known conversion survives round-trip with its verdict reasoning.
+        rrod = Issue.objects.get(
+            reference__name="Xbox 360 (Fat)", fault="RROD (three red lights)"
+        )
+        self.assertEqual(rrod.category, "Board")
+        self.assertEqual(rrod.cause, "GPU/CPU BGA solder failure")
+        self.assertEqual(rrod.verdict, "avoid")
+        self.assertIn("Reflow is temporary", rrod.note)
 
 
 class CompPullGrainTests(TestCase):

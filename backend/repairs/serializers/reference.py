@@ -41,7 +41,16 @@ class IssueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Issue
-        fields = ["id", "verdict", "verdict_display", "title", "note", "position"]
+        fields = [
+            "id",
+            "category",
+            "fault",
+            "cause",
+            "verdict",
+            "verdict_display",
+            "note",
+            "position",
+        ]
 
 
 class DeviceReferenceSerializer(serializers.ModelSerializer):

@@ -79,22 +79,37 @@ function matches(item: ReferenceItem, query: string): boolean {
 // Avoid first — the money-saver when scanning listings — then caution, then buy.
 const VERDICT_ORDER: Issue["verdict"][] = ["avoid", "caution", "buy"];
 
-function IssueChips({ issues }: { issues: Issue[] }) {
+function IssueTable({ issues }: { issues: Issue[] }) {
   const ordered = VERDICT_ORDER.flatMap((v) =>
     issues.filter((i) => i.verdict === v),
   );
   return (
-    <div className="issue-chips">
-      {ordered.map((issue) => (
-        <span
-          key={issue.id}
-          className={`badge issue-${issue.verdict}`}
-          title={issue.note || issue.verdict_display}
-        >
-          {issue.title}
-        </span>
-      ))}
-    </div>
+    <table className="pull-table issue-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Fault</th>
+          <th>Cause</th>
+          <th>Verdict</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {ordered.map((issue) => (
+          <tr key={issue.id}>
+            <td>{issue.category || "—"}</td>
+            <td>{issue.fault}</td>
+            <td>{issue.cause || "—"}</td>
+            <td>
+              <span className={`badge issue-${issue.verdict}`} title={issue.verdict_display}>
+                {issue.verdict}
+              </span>
+            </td>
+            <td className="pull-note">{issue.note || "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -329,7 +344,7 @@ export default function ReferenceView({
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
                         <td colSpan={5}>
-                          {it.issues.length > 0 && <IssueChips issues={it.issues} />}
+                          {it.issues.length > 0 && <IssueTable issues={it.issues} />}
                           {it.stop_note && (
                             <p className="ref-configs">
                               <strong>Stop:</strong> {it.stop_note}

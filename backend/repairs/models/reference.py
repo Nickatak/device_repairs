@@ -101,13 +101,15 @@ class DeviceReference(models.Model):
 
 
 class Issue(models.Model):
-    """One known issue on a catalog row, with a buy verdict — the structured
-    form of the notes prose's 'In-lane: X / Avoid: Y' conventions.
+    """One row of a catalog model's symptom-decomposition table:
+    category | fault | cause | verdict | note.
 
-    The quick-list this feeds answers the listing-scan question: seller says
-    <symptom> — do I buy? buy = in-lane, I fix this class; avoid = walk away;
-    caution = conditional (read the note). Same append-a-row grain as CompPull;
-    the notes prose stays free-form color, never the fact of record for verdicts.
+    The listing-scan question, structured: seller says <fault> — the cause
+    column says what that decodes to, the verdict says buy (in-lane, I fix
+    this class) / avoid (walk away) / caution (read the note). Seeded from
+    repairs/data/issues_seed.json (seed_issues command, hand-converted from
+    the notes prose 2026-07-22); the prose stays free-form color, never the
+    fact of record for verdicts.
     """
 
     class Verdict(models.TextChoices):
@@ -118,11 +120,21 @@ class Issue(models.Model):
     reference = models.ForeignKey(
         DeviceReference, on_delete=models.CASCADE, related_name="issues"
     )
-    verdict = models.CharField(max_length=10, choices=Verdict.choices)
-    title = models.CharField(
-        max_length=120,
-        help_text="Chip text — short symptom/fault handle ('HDMI port dead', 'APU BGA').",
+    category = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text="Subsystem grouping — Power, Display, Board, Input, Intake…",
     )
+    fault = models.CharField(
+        max_length=120,
+        help_text="The symptom as a listing shows it — 'No power', 'RROD', 'Stick drift'.",
+    )
+    cause = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="What the symptom decodes to — 'PSU / 5V MOSFET', 'APU BGA'.",
+    )
+    verdict = models.CharField(max_length=10, choices=Verdict.choices)
     note = models.TextField(
         blank=True,
         help_text="The detail behind the verdict ('reflow is temporary — walk away as a flip').",
@@ -135,7 +147,7 @@ class Issue(models.Model):
         ordering = ["position", "id"]
 
     def __str__(self):
-        return f"[{self.verdict}] {self.title} — {self.reference}"
+        return f"[{self.verdict}] {self.fault} → {self.cause or '?'} — {self.reference}"
 
 
 class CompPull(models.Model):

@@ -17,12 +17,15 @@ export interface CompPull {
   note: string;
 }
 
-// One known issue with a buy verdict — the listing-scan quick-list's row.
+// One row of the symptom-decomposition table: seller says <fault>, the cause
+// column says what that decodes to, the verdict says buy/avoid/caution.
 export interface Issue {
   id: number;
+  category: string;
+  fault: string;
+  cause: string;
   verdict: "buy" | "avoid" | "caution";
   verdict_display: string;
-  title: string;
   note: string;
   position: number;
 }

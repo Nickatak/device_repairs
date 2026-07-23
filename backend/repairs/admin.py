@@ -103,11 +103,11 @@ class LocationAdmin(admin.ModelAdmin):
 
 
 class IssueInline(admin.TabularInline):
-    """The hot-issues quick-list: verdict + short title per known fault."""
+    """The symptom-decomposition table: category | fault | cause | verdict | note."""
 
     model = Issue
     extra = 0
-    fields = ("verdict", "title", "note", "position")
+    fields = ("category", "fault", "cause", "verdict", "note", "position")
 
 
 class CompPullInline(admin.TabularInline):
