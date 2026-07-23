@@ -57,7 +57,7 @@ function matches(item: ReferenceItem, query: string): boolean {
 
 function PullHistory({ pulls }: { pulls: CompPull[] }) {
   if (pulls.length === 0) {
-    return <p className="ref-notes">No comp pulls recorded — this row is a gap.</p>;
+    return <p className="ref-notes">No comp pulls recorded yet — pull before first buy.</p>;
   }
   return (
     <table className="pull-table">
@@ -106,7 +106,9 @@ export default function ReferenceView({
 }) {
   const [query, setQuery] = useState("");
   const [lane, setLane] = useState("all");
-  const [flag, setFlag] = useState<"all" | "stale" | "gap">("all");
+  const [staleOnly, setStaleOnly] = useState(false);
+  // Default view = rows with a working comp; toggling off adds the rest back.
+  const [hasCompOnly, setHasCompOnly] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const doctrine = lanes.find((l) => l.name === "doctrine");
@@ -126,10 +128,11 @@ export default function ReferenceView({
       items.filter(
         (it) =>
           (lane === "all" || it.lane === lane) &&
-          (flag === "all" || (flag === "stale" ? it.stale : it.gap)) &&
+          (!staleOnly || it.stale) &&
+          (!hasCompOnly || !it.gap) &&
           matches(it, query),
       ),
-    [items, query, lane, flag],
+    [items, query, lane, staleOnly, hasCompOnly],
   );
 
   const pager = usePagination(filtered);
@@ -141,7 +144,8 @@ export default function ReferenceView({
           <h1>Price Sheet</h1>
           <p className="subtitle">
             {items.length} rows — stops, comps, and identity per model.{" "}
-            {staleCount} stale (&gt;60d), {gapCount} without a working comp.
+            {staleCount} stale (&gt;60d), {gapCount} without a working comp
+            {hasCompOnly && gapCount > 0 ? " (hidden)" : ""}.
           </p>
         </div>
       </header>
@@ -186,18 +190,18 @@ export default function ReferenceView({
             <span className="chip-divider" aria-hidden />
             <div className="ref-filters">
               <button
-                className={flag === "stale" ? "ref-chip flag-stale active" : "ref-chip flag-stale"}
-                onClick={() => setFlag(flag === "stale" ? "all" : "stale")}
+                className={staleOnly ? "ref-chip flag-stale active" : "ref-chip flag-stale"}
+                onClick={() => setStaleOnly(!staleOnly)}
                 title="Latest working comp older than 60 days — due for a re-pull"
               >
                 Stale
               </button>
               <button
-                className={flag === "gap" ? "ref-chip flag-gap active" : "ref-chip flag-gap"}
-                onClick={() => setFlag(flag === "gap" ? "all" : "gap")}
-                title="No working comp pulled — pull before first buy"
+                className={hasCompOnly ? "ref-chip flag-good active" : "ref-chip flag-good"}
+                onClick={() => setHasCompOnly(!hasCompOnly)}
+                title="On (default): only rows with a working comp. Off: rows without one join the list — pull before first buy."
               >
-                Gap
+                Has working comp
               </button>
             </div>
           </div>
@@ -257,7 +261,7 @@ export default function ReferenceView({
                             )}
                           </>
                         ) : (
-                          <span className="badge flag-gap">gap</span>
+                          <span className="badge flag-gap">no comp</span>
                         )}
                       </td>
                       <td className="ref-year">
