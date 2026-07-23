@@ -19,8 +19,8 @@ predict, the source under `backend/repairs/` wins.
   they must never enter is committed seed files in the public repo.
 - **Never run seed commands** (`seed_purchases`, `seed_units`, `seed_pricesheet`,
   `seed_reference`) against this DB — they're historical imports and clobber
-  post-freeze edits. (`seed_issues` / `seed_repairs` are upsert-safe but still
-  not yours to run casually.)
+  post-freeze edits. (`seed_issues` / `seed_repairs` / `seed_parts` are
+  upsert-safe but still not yours to run casually.)
 - **No DELETE anywhere** — by design. Corrections are PATCHes.
 - Money fields are JSON **strings** of decimals (`"37.87"`); dates are
   `"YYYY-MM-DD"`; datetimes ISO-8601 UTC. Send numbers for money if easier —
