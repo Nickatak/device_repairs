@@ -19,8 +19,10 @@ predict, the source under `backend/repairs/` wins.
   they must never enter is committed seed files in the public repo.
 - **Never run seed commands** (`seed_purchases`, `seed_units`, `seed_pricesheet`,
   `seed_reference`) against this DB — they're historical imports and clobber
-  post-freeze edits. (`seed_issues` / `seed_repairs` / `seed_parts` are
-  upsert-safe but still not yours to run casually.)
+  post-freeze edits. (`seed_issues` / `seed_repairs` / `seed_parts` /
+  `seed_revisions` / `seed_stock` are upsert-safe but still not yours to run
+  casually — `seed_stock` in particular would revert live counts to the
+  2026-07-23 import bases.)
 - **No DELETE anywhere** — by design. Corrections are PATCHes.
 - Money fields are JSON **strings** of decimals (`"37.87"`); dates are
   `"YYYY-MM-DD"`; datetimes ISO-8601 UTC. Send numbers for money if easier —
@@ -113,6 +115,27 @@ Per-unit facts learned at intake (serial, actual model, condition) go on each
 device: `PATCH /inventory/<id>/` with any of `serial`, `reference`, `location`,
 `notes`, `status`, `cost_override`, `purchase`.
 
+## Recipe: parts stock (buckets, intakes, recounts)
+
+Stock buckets are minted SKUs at consumption grain, in two tracking tiers
+(`mode`): `counted` (transactional — intakes add, bench-Part draws subtract,
+recounts override; live `count` is derived server-side) and `presence`
+(have/low/out by eyeball; `state` field, no arithmetic). Compatibility rides
+`fits_references` / `fits_revisions` (ids) plus the free-text `note`.
+
+- When a **parts order arrives** and Nick says which bucket(s) it fills:
+  `POST /stock/intakes/` `{"purchase": <parts purchase id>, "stock_item": <id>,
+  "quantity": N}` — device-kind purchases are rejected. One purchase can feed
+  several buckets. Also stamp the purchase arrival (arrive endpoint or PATCH).
+- **Physical recount**: `POST /stock/<id>/recount/` `{"count": N}` — sets the
+  new base and stamps `counted_at` server-side. This is the ONLY way the count
+  is set directly; never try to PATCH a count.
+- **Presence state**: PATCH `/stock/<id>/` `{"state": "low"}` (in_stock | low |
+  out) when Nick reports a bin running dry.
+- New bucket: `POST /stock/` with `name`, `category`, `mode`, optional fits
+  id arrays and `note`. Don't mint buckets on your own initiative — bucket
+  grain and tier are Nick's design calls; ask when a new part class shows up.
+
 ## Recipe: a unit left (sold / gifted / scrapped…)
 
 `POST /exits/`
@@ -178,7 +201,11 @@ record.
 | POST `/repairs/` · PATCH `/repairs/<id>/` | Start repair · phase track/completion |
 | POST `/notes/` · PATCH `/notes/<id>/` | Bench notes (one-level nesting) |
 | POST `/measurements/` · PATCH `/measurements/<id>/` | Readings on a note |
-| GET `/reference/` | Full price-sheet catalog (comps, issues, variants) |
+| GET/POST `/stock/` | Buckets with live counts / mint a SKU |
+| GET/PATCH `/stock/<id>/` | Bucket detail / identity + state edits (never count) |
+| POST `/stock/<id>/recount/` | Physical recount: new base + stamp |
+| POST `/stock/intakes/` · PATCH `/stock/intakes/<id>/` | Units entering a bucket from a parts purchase |
+| GET `/reference/` | Full price-sheet catalog (comps, issues, variants, revisions) |
 | GET `/lanes/` | Category lanes |
 | GET `/options/` | Lookup pools: references, sources, people, locations, statuses, recent purchases |
 | GET `/cash/` | `money_out` / `money_in` / `net` + counts |
