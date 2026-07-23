@@ -96,6 +96,46 @@ class SeedPurchasesTests(TestCase):
         self.assertEqual(Purchase.objects.count(), count)
 
 
+class SeedPartsTests(TestCase):
+    """The parts-ledger import: idempotent, source-parsing already baked into the JSON."""
+
+    def test_import_is_idempotent_and_maps_fields(self):
+        call_command("seed_parts")
+        count = Purchase.objects.filter(kind=Purchase.Kind.PARTS).count()
+        self.assertGreater(count, 60)
+
+        # A fully-specified row: eBay order with URL, dated arrival.
+        halls = Purchase.objects.get(ledger_ref="parts-12")
+        self.assertEqual(halls.kind, "parts")
+        self.assertEqual(halls.label, "Hall-effect stick modules DS4 20-pack")
+        self.assertEqual(halls.source.name, "eBay")
+        self.assertEqual(halls.order_ref, "19-14835-92283")
+        self.assertEqual(str(halls.total_price), "34.01")
+        self.assertEqual(str(halls.arrived_on), "2026-07-10")
+        self.assertEqual(halls.expected_units, 20)
+        # AliExpress seller lands in the shared counterparty pool.
+        self.assertEqual(
+            Purchase.objects.get(ledger_ref="parts-17").from_who, "Dragon Game 666"
+        )
+        # The combined-cost screw pair: $17 on one line, $0 companion.
+        self.assertEqual(
+            str(Purchase.objects.get(ledger_ref="parts-27").total_price), "17.00"
+        )
+        self.assertEqual(
+            str(Purchase.objects.get(ledger_ref="parts-28").total_price), "0.00"
+        )
+        # The two no-money-out CSV rows (cancelled, never-arrived) never import.
+        self.assertFalse(Purchase.objects.filter(ledger_ref="parts-06").exists())
+        self.assertFalse(Purchase.objects.filter(ledger_ref="parts-35").exists())
+        # Cost-TBD rows import with null money.
+        self.assertIsNone(Purchase.objects.get(ledger_ref="parts-53").total_price)
+
+        call_command("seed_parts")
+        self.assertEqual(
+            Purchase.objects.filter(kind=Purchase.Kind.PARTS).count(), count
+        )
+
+
 class SeedRepairsTests(TestCase):
     """The converted bench logs: idempotent, phase-dated, note/measurement upserts."""
 
