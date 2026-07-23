@@ -88,3 +88,90 @@ class PurchaseTests(TestCase):
         Purchase.objects.create(kind="parts", label="hall modules")
         ids = [p["id"] for p in self.client.get("/api/v1/options/").json()["purchases"]]
         self.assertEqual(ids, [device_lot.pk])
+
+
+class MixedLotCostTests(TestCase):
+    """cost_override carves explicit money out of the lot; the rest split evenly."""
+
+    def test_override_reprices_the_remainder(self):
+        # $100 lot of 5: two DS5s pinned at $30 each → three DS4s split the $40.
+        lot = Purchase.objects.create(total_price=Decimal("100.00"), expected_units=5)
+        Device.objects.create(purchase=lot, cost_override=Decimal("30.00"))
+        Device.objects.create(purchase=lot, cost_override=Decimal("30.00"))
+        plain = Device.objects.create(purchase=lot)
+        self.assertEqual(lot.unit_price, Decimal("13.33"))
+        self.assertEqual(plain.unit_cost, Decimal("13.33"))
+
+    def test_overridden_unit_reports_its_own_cost(self):
+        lot = Purchase.objects.create(total_price=Decimal("100.00"), expected_units=5)
+        pinned = Device.objects.create(purchase=lot, cost_override=Decimal("30.00"))
+        self.assertEqual(pinned.unit_cost, Decimal("30.00"))
+
+    def test_all_units_overridden_leaves_no_default_share(self):
+        lot = Purchase.objects.create(total_price=Decimal("60.00"), expected_units=2)
+        Device.objects.create(purchase=lot, cost_override=Decimal("40.00"))
+        Device.objects.create(purchase=lot, cost_override=Decimal("20.00"))
+        self.assertIsNone(lot.unit_price)
+
+    def test_homogeneous_lot_unchanged(self):
+        lot = Purchase.objects.create(total_price=Decimal("20.00"), expected_units=4)
+        Device.objects.create(purchase=lot)
+        self.assertEqual(lot.unit_price, Decimal("5.00"))
+
+    def test_cost_override_writable_via_api(self):
+        lot = Purchase.objects.create(total_price=Decimal("100.00"), expected_units=2)
+        device = Device.objects.create(purchase=lot)
+        res = self.client.patch(
+            f"/api/v1/inventory/{device.pk}/",
+            {"cost_override": "70.00"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(lot.unit_price, Decimal("30.00"))
+
+
+class PurchaseDetailTests(TestCase):
+    """The purchase page payload and the arrival action."""
+
+    def test_detail_embeds_unit_rows(self):
+        lot = Purchase.objects.create(total_price=Decimal("30.00"), expected_units=2)
+        Device.objects.create(purchase=lot, status="shipped")
+        Device.objects.create(purchase=lot, status="shipped", cost_override=Decimal("18.00"))
+        data = self.client.get(f"/api/v1/purchases/{lot.pk}/").json()
+        self.assertEqual(len(data["devices"]), 2)
+        costs = sorted(d["unit_cost"] for d in data["devices"])
+        self.assertEqual(costs, ["12.00", "18.00"])
+
+    def test_arrive_stamps_date_and_flips_shipped_units_only(self):
+        lot = Purchase.objects.create()
+        shipped = Device.objects.create(purchase=lot, status="shipped")
+        already_bench = Device.objects.create(purchase=lot, status="in_repair")
+        other_lot_unit = Device.objects.create(
+            purchase=Purchase.objects.create(), status="shipped"
+        )
+        res = self.client.post(
+            f"/api/v1/purchases/{lot.pk}/arrive/",
+            {"date": "2026-07-20"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {"arrived_on": "2026-07-20", "units_acquired": 1})
+        lot.refresh_from_db()
+        shipped.refresh_from_db()
+        already_bench.refresh_from_db()
+        other_lot_unit.refresh_from_db()
+        self.assertEqual(str(lot.arrived_on), "2026-07-20")
+        self.assertEqual(shipped.status, "acquired")
+        self.assertEqual(already_bench.status, "in_repair")
+        self.assertEqual(other_lot_unit.status, "shipped")
+
+    def test_arrive_defaults_to_today(self):
+        from django.utils import timezone
+
+        lot = Purchase.objects.create()
+        res = self.client.post(
+            f"/api/v1/purchases/{lot.pk}/arrive/", {}, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, 200)
+        lot.refresh_from_db()
+        self.assertEqual(lot.arrived_on, timezone.localdate())

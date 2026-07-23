@@ -1,4 +1,5 @@
 import PurchasesView from "@/components/purchases/PurchasesView";
+import { getCash, type CashSummary } from "@/lib/api/cash";
 import { getOptions, type Options } from "@/lib/api/options";
 import { getPurchases, type Purchase } from "@/lib/api/purchases";
 
@@ -19,9 +20,14 @@ export default async function PurchasesPage({
     purchases: [],
     statuses: [],
   };
+  let cash: CashSummary | null = null;
   let error: string | null = null;
   try {
-    [purchases, options] = await Promise.all([getPurchases(), getOptions()]);
+    [purchases, options, cash] = await Promise.all([
+      getPurchases(),
+      getOptions(),
+      getCash(),
+    ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
   }
@@ -32,6 +38,7 @@ export default async function PurchasesPage({
       options={options}
       error={error}
       initialQuery={q ?? ""}
+      cash={cash}
     />
   );
 }

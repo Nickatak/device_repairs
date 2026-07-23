@@ -1,18 +1,22 @@
 from django.urls import path
 
 from .views import (
+    CashSummaryView,
     DeviceBulkCreateView,
     DeviceDetailView,
+    ExitCreateView,
+    ExitUpdateView,
     InventoryListView,
     LaneListView,
     MeasurementCreateView,
     MeasurementUpdateView,
     OptionsView,
+    PurchaseArriveView,
+    PurchaseDetailView,
+    PurchaseListCreateView,
     ReferenceListView,
     NoteCreateView,
     NoteUpdateView,
-    PurchaseListCreateView,
-    PurchaseUpdateView,
     RepairCreateView,
     RepairUpdateView,
 )
@@ -30,7 +34,10 @@ urlpatterns = [
     path("measurements/", MeasurementCreateView.as_view(), name="measurement-create"),
     path("measurements/<int:pk>/", MeasurementUpdateView.as_view(), name="measurement-update"),
     path("purchases/", PurchaseListCreateView.as_view(), name="purchases"),
-    path("purchases/<int:pk>/", PurchaseUpdateView.as_view(), name="purchase-update"),
+    path("purchases/<int:pk>/", PurchaseDetailView.as_view(), name="purchase-detail"),
+    path("purchases/<int:pk>/arrive/", PurchaseArriveView.as_view(), name="purchase-arrive"),
+    path("exits/", ExitCreateView.as_view(), name="exit-create"),
+    path("exits/<int:pk>/", ExitUpdateView.as_view(), name="exit-update"),
+    path("cash/", CashSummaryView.as_view(), name="cash"),
     path("options/", OptionsView.as_view(), name="options"),
 ]
-

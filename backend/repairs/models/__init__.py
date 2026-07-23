@@ -9,6 +9,7 @@ catalog), inventory (physical units), repairlog (bench work). This barrel keeps
 `from repairs.models import X` working everywhere, including migrations.
 """
 
+from .exits import Exit
 from .inventory import Device, Location
 from .purchases import Purchase, Source
 from .reference import CompPull, DeviceReference, Lane
@@ -18,6 +19,7 @@ __all__ = [
     "CompPull",
     "Device",
     "DeviceReference",
+    "Exit",
     "Lane",
     "Location",
     "Measurement",

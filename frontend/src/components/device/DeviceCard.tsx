@@ -3,8 +3,7 @@
 import Link from "next/link";
 import type { DeviceDetail as DeviceDetailT } from "@/lib/api/inventory";
 import { bandClass, formatPrice } from "@/lib/format";
-import { purchaseLabel } from "@/components/inventory/DeviceForm";
-import { purchaseHref, purchaseShort } from "@/components/inventory/InventoryView";
+import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
 
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
@@ -38,9 +37,6 @@ export default function DeviceCard({
           }
         />
         <Field label="Location" value={device.location} />
-        {device.status === "exited" && (
-          <Field label="To who" value={device.to_who} />
-        )}
         <Field label="Serial" value={device.serial} />
         <div className="card-field">
           <dt>Purchase</dt>
@@ -61,7 +57,8 @@ export default function DeviceCard({
           label="Acquired"
           value={
             device.purchase
-              ? formatPrice(device.purchase.unit_price) +
+              ? formatPrice(device.unit_cost) +
+                (device.cost_override !== null ? " (override)" : "") +
                 (device.purchase.expected_units || device.purchase.order_ref
                   ? ` (lot: ${formatPrice(device.purchase.total_price)}${device.purchase.order_ref ? ` · ${device.purchase.order_ref}` : ""})`
                   : "")

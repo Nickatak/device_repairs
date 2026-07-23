@@ -4,7 +4,7 @@ from django.db.models import F, Max
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from repairs.models import Device, DeviceReference, Location, Purchase, Source
+from repairs.models import Device, DeviceReference, Exit, Location, Purchase, Source
 from repairs.serializers import PurchaseSerializer
 
 
@@ -39,9 +39,7 @@ class OptionsView(APIView):
                             "from_who", flat=True
                         )
                     )
-                    | set(
-                        Device.objects.exclude(to_who="").values_list("to_who", flat=True)
-                    )
+                    | set(Exit.objects.exclude(to_who="").values_list("to_who", flat=True))
                 ),
                 # Buy events for the device form's purchase combobox, most
                 # recently placed first — device lots only; parts purchases

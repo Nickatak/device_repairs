@@ -17,11 +17,12 @@ function asInventoryItem(device: DeviceDetailT): InventoryItem {
     serial: device.serial,
     location: device.location,
     purchase: device.purchase,
-    to_who: device.to_who,
     notes: device.notes,
     status: device.status,
     status_display: device.status_display,
     repair_count: device.repairs.length,
+    cost_override: device.cost_override,
+    unit_cost: device.unit_cost,
   };
 }
 

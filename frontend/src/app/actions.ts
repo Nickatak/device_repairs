@@ -10,18 +10,23 @@ export interface DeviceWrite {
   serial: string;
   location: string;
   purchase: number | null;
-  to_who: string;
   notes: string;
   status: string;
+  cost_override: string | null;
+}
+
+// One homogeneous slice of a lot: N units of one catalog model.
+export interface BulkLine {
+  reference: number | null;
+  quantity: number;
 }
 
 export interface BulkDeviceWrite {
   purchase: number | null;
-  reference: number | null;
   location: string;
   notes: string;
   status: string;
-  quantity: number;
+  lines: BulkLine[];
 }
 
 export interface PurchaseWrite {
@@ -57,8 +62,8 @@ export async function bulkCreateDevices(data: BulkDeviceWrite): Promise<WriteRes
   return send(`${API_BASE}/inventory/bulk/`, "POST", data, ["/purchases", "/"]);
 }
 
-// Purchases render on two tabs (device lots / parts orders) AND inside
-// inventory rows — refresh all three.
+// Purchases render on two tabs (device lots / parts orders), their own detail
+// pages, AND inside inventory rows — refresh all of them.
 export async function createPurchase(data: PurchaseWrite): Promise<WriteResult> {
   return send(`${API_BASE}/purchases/`, "POST", data, ["/purchases", "/parts", "/"]);
 }
@@ -67,7 +72,59 @@ export async function updatePurchase(
   id: number,
   data: PurchaseWrite,
 ): Promise<WriteResult> {
-  return send(`${API_BASE}/purchases/${id}/`, "PATCH", data, ["/purchases", "/parts", "/"]);
+  return send(`${API_BASE}/purchases/${id}/`, "PATCH", data, [
+    "/purchases",
+    `/purchases/${id}`,
+    "/parts",
+    "/",
+  ]);
+}
+
+// The lot landed: stamp arrived_on (default today) and flip its shipped units
+// to acquired in one stroke — the ledger's on-arrival rule.
+export async function markArrived(
+  id: number,
+  date: string | null,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/purchases/${id}/arrive/`, "POST", date ? { date } : {}, [
+    "/purchases",
+    `/purchases/${id}`,
+    "/",
+  ]);
+}
+
+export interface ExitWrite {
+  kind: string;
+  happened_on: string | null;
+  sale_price: string | null;
+  fees: string | null;
+  to_who: string;
+  note: string;
+}
+
+// Recording an exit also flips the device to exited (backend rule), so the
+// device page, inventory, and cash strip all change.
+export async function createExit(
+  deviceId: number,
+  data: ExitWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/exits/`, "POST", { device: deviceId, ...data }, [
+    `/devices/${deviceId}`,
+    "/purchases",
+    "/",
+  ]);
+}
+
+export async function updateExit(
+  deviceId: number,
+  exitId: number,
+  data: ExitWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/exits/${exitId}/`, "PATCH", data, [
+    `/devices/${deviceId}`,
+    "/purchases",
+    "/",
+  ]);
 }
 
 async function send(

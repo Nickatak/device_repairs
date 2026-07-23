@@ -78,10 +78,9 @@ class BulkAddTests(TestCase):
             "/api/v1/inventory/bulk/",
             {
                 "purchase": purchase.pk,
-                "reference": ref.pk,
                 "location": "Shelf 2",
                 "notes": "from the 3x lot",
-                "quantity": 3,
+                "lines": [{"reference": ref.pk, "quantity": 3}],
             },
             content_type="application/json",
         )
@@ -99,7 +98,38 @@ class BulkAddTests(TestCase):
     def test_bulk_create_rejects_zero_quantity(self):
         res = self.client.post(
             "/api/v1/inventory/bulk/",
-            {"quantity": 0},
+            {"lines": [{"quantity": 0}]},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(Device.objects.count(), 0)
+
+    def test_bulk_create_heterogeneous_lot(self):
+        # The 2-DS5 + 3-DS4 case: one call, per-line references.
+        purchase = Purchase.objects.create(total_price=Decimal("100.00"), expected_units=5)
+        ds5 = make_ref(name="DualSense", brand="Sony", lane_name="controller")
+        ds4 = make_ref(name="DS4", brand="Sony", lane_name="controller")
+        res = self.client.post(
+            "/api/v1/inventory/bulk/",
+            {
+                "purchase": purchase.pk,
+                "location": "Shelf 2",
+                "lines": [
+                    {"reference": ds5.pk, "quantity": 2},
+                    {"reference": ds4.pk, "quantity": 3},
+                ],
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.json()["created"], 5)
+        self.assertEqual(Device.objects.filter(purchase=purchase, reference=ds5).count(), 2)
+        self.assertEqual(Device.objects.filter(purchase=purchase, reference=ds4).count(), 3)
+
+    def test_bulk_create_caps_total_units(self):
+        res = self.client.post(
+            "/api/v1/inventory/bulk/",
+            {"lines": [{"quantity": 60}, {"quantity": 41}]},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 400)

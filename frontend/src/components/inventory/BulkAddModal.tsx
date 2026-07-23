@@ -2,15 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { bulkCreateDevices } from "@/app/actions";
+import { bulkCreateDevices, type BulkLine } from "@/app/actions";
 import type { Options } from "@/lib/api/options";
 import type { Purchase } from "@/lib/api/purchases";
+import { purchaseLabel } from "@/lib/purchase-format";
 import Modal from "@/components/ui/Modal";
-import { CREATE_STATUSES, ReferenceCombobox, purchaseLabel } from "./DeviceForm";
+import { CREATE_STATUSES, ReferenceCombobox } from "./DeviceForm";
 import { TextCombobox } from "@/components/ui/Combobox";
 
-// "3x controllers arrived" → spawn N identical device rows from this purchase.
-// Per-unit identity (model #, serial) is refined on each row afterward.
+type LineState = { reference: number | null; quantity: string };
+
+// "2x DS5 + 3x DS4 arrived" → spawn the lot's device rows in one shot; each
+// line is one homogeneous slice (reference × quantity). Per-unit identity
+// (serial, cost override) is refined on each row afterward.
 export default function BulkAddModal({
   purchase,
   options,
@@ -30,26 +34,35 @@ export default function BulkAddModal({
       ? Math.max(purchase.expected_units - purchase.device_count, 1)
       : 1;
 
-  const [reference, setReference] = useState<number | null>(null);
-  const [quantity, setQuantity] = useState(String(remaining));
+  const [lines, setLines] = useState<LineState[]>([
+    { reference: null, quantity: String(remaining) },
+  ]);
   const [location, setLocation] = useState("");
   // An arrived lot's units are on hand; an unarrived one's are inbound.
   const [status, setStatus] = useState(purchase.arrived_on ? "acquired" : "shipped");
   const [notes, setNotes] = useState("");
 
   const statuses = options.statuses.filter((s) => CREATE_STATUSES.includes(s.value));
+  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+
+  function setLine(i: number, patch: Partial<LineState>) {
+    setLines((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const payload: BulkLine[] = lines.map((l) => ({
+      reference: l.reference,
+      quantity: Number(l.quantity),
+    }));
     startTransition(async () => {
       const result = await bulkCreateDevices({
         purchase: purchase.id,
-        reference,
         location,
         notes,
         status,
-        quantity: Number(quantity),
+        lines: payload,
       });
       if (result.ok) {
         router.refresh();
@@ -64,21 +77,56 @@ export default function BulkAddModal({
     <Modal onClose={onClose}>
       <h2>Add devices — {purchaseLabel(purchase)}</h2>
       <form onSubmit={onSubmit}>
-        <label>
-          Model (catalog)
-          <ReferenceCombobox
-            value={reference}
-            references={options.references}
-            onChange={setReference}
-          />
-        </label>
+        {lines.map((line, i) => (
+          <div className="row" key={i}>
+            <label>
+              Model (catalog)
+              <ReferenceCombobox
+                value={line.reference}
+                references={options.references}
+                onChange={(id) => setLine(i, { reference: id })}
+              />
+            </label>
+            <label className="narrow">
+              Qty
+              <input
+                inputMode="numeric"
+                value={line.quantity}
+                onChange={(e) => setLine(i, { quantity: e.target.value })}
+              />
+            </label>
+            {lines.length > 1 && (
+              <button
+                type="button"
+                className="btn-edit"
+                title="Remove line"
+                onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ))}
+        <div className="add-note-row">
+          <button
+            type="button"
+            className="btn-edit"
+            title="Mixed lot? One line per model (2x DS5 + 3x DS4)"
+            onClick={() =>
+              setLines((ls) => [...ls, { reference: null, quantity: "1" }])
+            }
+          >
+            + line
+          </button>
+        </div>
         <div className="row">
-          <label className="narrow">
-            Quantity
-            <input
-              inputMode="numeric"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+          <label>
+            Location
+            <TextCombobox
+              value={location}
+              items={options.locations}
+              onChange={setLocation}
+              placeholder="Shelf 1…"
             />
           </label>
           <label>
@@ -92,15 +140,6 @@ export default function BulkAddModal({
             </select>
           </label>
         </div>
-        <label>
-          Location
-          <TextCombobox
-            value={location}
-            items={options.locations}
-            onChange={setLocation}
-            placeholder="Shelf 1…"
-          />
-        </label>
         <label>
           Note (duplicated on each unit)
           <textarea
@@ -124,7 +163,7 @@ export default function BulkAddModal({
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending
               ? "Creating…"
-              : `Create ${Number(quantity) || 0} device${Number(quantity) === 1 ? "" : "s"}`}
+              : `Create ${total} device${total === 1 ? "" : "s"}`}
           </button>
         </div>
       </form>

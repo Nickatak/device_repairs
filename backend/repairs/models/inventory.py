@@ -91,17 +91,29 @@ class Device(models.Model):
             "there. Null = found/own-stock without a buy record."
         ),
     )
-    to_who = models.CharField(
-        max_length=120,
+    cost_override = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
         blank=True,
         help_text=(
-            "Who the unit went to on exit — buyer, friend. Shares the counterparty "
-            "pool with Purchase.from_who. Meaningful only when status is exited."
+            "Explicit unit cost for mixed lots (2 DS5 + 3 DS4 shouldn't split "
+            "evenly). Units without one split the lot's remainder evenly. "
+            "Null = derive from the purchase."
         ),
     )
     notes = models.TextField(
         blank=True, help_text="Facts about the unit, not any one step (e.g. 'uses a 19V brick')."
     )
+
+    @property
+    def unit_cost(self):
+        """What this unit cost: the override when set, else the lot's even share."""
+        if self.cost_override is not None:
+            return self.cost_override
+        if self.purchase_id:
+            return self.purchase.unit_price
+        return None
 
     def __str__(self):
         if self.label:

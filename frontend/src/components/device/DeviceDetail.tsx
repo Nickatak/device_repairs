@@ -10,6 +10,7 @@ import type { Note } from "@/lib/api/repairlog";
 import { formatDateTime } from "@/lib/format";
 import DeviceCard from "./DeviceCard";
 import DeviceCardEdit from "./DeviceCardEdit";
+import Exits from "./Exits";
 import NoteModal, { type NoteModalState } from "./NoteModal";
 import NoteRow from "./NoteRow";
 import PhaseTrack from "./PhaseTrack";
@@ -65,6 +66,9 @@ export default function DeviceDetail({
       ) : (
         <DeviceCard device={device} onEdit={() => setEditing(true)} />
       )}
+
+      {/* Departure history — any state can exit (scrap a dud mid-repair, sell as-is). */}
+      <Exits deviceId={device.id} exits={device.exits} options={options} />
 
       <div className="repairs-head">
         <h2>Bench log</h2>

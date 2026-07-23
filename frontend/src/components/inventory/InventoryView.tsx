@@ -4,23 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
 import { bandClass, formatDate, formatPrice } from "@/lib/format";
+import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
 import DeviceModal from "./DeviceModal";
-import { purchaseLabel } from "./DeviceForm";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
-
-// Compact handle for a buy event: ledger id ("0004") first, then order ref.
-export function purchaseShort(p: Purchase): string {
-  const ref = p.ledger_ref || p.order_ref;
-  return [ref, p.source].filter(Boolean).join(" · ") || `#${p.id}`;
-}
-
-export function purchaseHref(p: Purchase): string {
-  const key = p.ledger_ref || p.order_ref;
-  return key ? `/purchases?q=${encodeURIComponent(key)}` : "/purchases";
-}
 
 function StatusBadge({ item }: { item: InventoryItem }) {
   return (
@@ -45,9 +33,7 @@ function sortValue(item: InventoryItem, key: SortKey): string | number | null {
     case "purchase":
       return item.purchase ? purchaseShort(item.purchase) : null;
     case "acquired":
-      return item.purchase?.unit_price != null
-        ? Number(item.purchase.unit_price)
-        : null;
+      return item.unit_cost != null ? Number(item.unit_cost) : null;
     case "arrived":
       return item.purchase?.arrived_on ?? null;
   }
@@ -66,7 +52,6 @@ function matches(item: InventoryItem, query: string): boolean {
     item.purchase?.ledger_ref ?? "",
     item.purchase?.order_ref ?? "",
     item.purchase?.source ?? "",
-    item.to_who,
   ]
     .join(" ")
     .toLowerCase();
@@ -204,8 +189,16 @@ export default function InventoryView({
                     "—"
                   )}
                 </td>
-                <td className="num" title={item.purchase ? `lot: ${formatPrice(item.purchase.total_price)}` : undefined}>
-                  {formatPrice(item.purchase?.unit_price ?? null)}
+                <td
+                  className="num"
+                  title={[
+                    item.purchase ? `lot: ${formatPrice(item.purchase.total_price)}` : null,
+                    item.cost_override !== null ? "explicit unit cost (override)" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || undefined}
+                >
+                  {formatPrice(item.unit_cost)}
                 </td>
                 <td>
                   {item.purchase?.arrived_on

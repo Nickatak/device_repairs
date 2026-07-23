@@ -30,3 +30,29 @@ export async function getPurchases(): Promise<Purchase[]> {
   }
   return res.json();
 }
+
+// Slim device row on the purchase page's units table — no purchase echo.
+export interface PurchaseUnit {
+  id: number;
+  label: string;
+  ledger_ref: string;
+  serial: string;
+  status: string;
+  status_display: string;
+  location: string | null;
+  repair_count: number;
+  cost_override: string | null;
+  unit_cost: string | null;
+}
+
+export interface PurchaseDetail extends Purchase {
+  devices: PurchaseUnit[];
+}
+
+export async function getPurchase(id: number): Promise<PurchaseDetail> {
+  const res = await fetch(`${API_BASE}/purchases/${id}/`, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`Purchase fetch failed: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}

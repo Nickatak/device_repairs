@@ -8,13 +8,19 @@ Split by domain (2026-07-22), mirroring models/: purchases, reference, inventory
 repairlog. This barrel keeps `from repairs.serializers import X` working.
 """
 
+from .exits import ExitSerializer, ExitWriteSerializer
 from .inventory import (
     DeviceBulkCreateSerializer,
     DeviceDetailSerializer,
     DeviceWriteSerializer,
     InventoryDeviceSerializer,
 )
-from .purchases import PurchaseSerializer, PurchaseWriteSerializer
+from .purchases import (
+    PurchaseDetailSerializer,
+    PurchaseSerializer,
+    PurchaseUnitSerializer,
+    PurchaseWriteSerializer,
+)
 from .reference import (
     STALE_AFTER_DAYS,
     CompPullSerializer,
@@ -42,13 +48,17 @@ __all__ = [
     "DeviceDetailSerializer",
     "DeviceReferenceSerializer",
     "DeviceWriteSerializer",
+    "ExitSerializer",
+    "ExitWriteSerializer",
     "InventoryDeviceSerializer",
     "LaneSerializer",
     "MeasurementSerializer",
     "MeasurementWriteSerializer",
     "NoteSerializer",
     "NoteWriteSerializer",
+    "PurchaseDetailSerializer",
     "PurchaseSerializer",
+    "PurchaseUnitSerializer",
     "PurchaseWriteSerializer",
     "RepairCreateSerializer",
     "RepairWithNotesSerializer",

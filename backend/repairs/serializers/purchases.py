@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from repairs.models import Purchase, Source
+from repairs.models import Device, Purchase, Source
 
 
 class PurchaseSerializer(serializers.ModelSerializer):
@@ -35,6 +35,48 @@ class PurchaseSerializer(serializers.ModelSerializer):
     def get_unit_price(self, obj) -> str | None:
         price = obj.unit_price
         return str(price) if price is not None else None
+
+
+class PurchaseUnitSerializer(serializers.ModelSerializer):
+    """Slim device row for the purchase page's units table — no purchase echo
+    (the parent payload IS the purchase)."""
+
+    label = serializers.SerializerMethodField()
+    location = serializers.StringRelatedField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    repair_count = serializers.IntegerField(source="repairs.count", read_only=True)
+    unit_cost = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = [
+            "id",
+            "label",
+            "ledger_ref",
+            "serial",
+            "status",
+            "status_display",
+            "location",
+            "repair_count",
+            "cost_override",
+            "unit_cost",
+        ]
+
+    def get_label(self, obj) -> str:
+        return str(obj)
+
+    def get_unit_cost(self, obj) -> str | None:
+        cost = obj.unit_cost
+        return str(cost) if cost is not None else None
+
+
+class PurchaseDetailSerializer(PurchaseSerializer):
+    """The purchase page payload — the buy event plus its linked device rows."""
+
+    devices = PurchaseUnitSerializer(many=True, read_only=True)
+
+    class Meta(PurchaseSerializer.Meta):
+        fields = [*PurchaseSerializer.Meta.fields, "devices"]
 
 
 class PurchaseWriteSerializer(serializers.ModelSerializer):

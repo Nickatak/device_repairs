@@ -112,10 +112,21 @@ class Purchase(models.Model):
 
     @property
     def unit_price(self):
-        """Even split of the lot across its units; None while unknowable."""
+        """Default share for a unit WITHOUT a cost_override; None while unknowable.
+
+        Overridden units take their explicit cost out of the pot first; the
+        remainder splits evenly across the rest (expected_units counts units
+        not yet entered as rows). Homogeneous lots — no overrides — reduce to
+        the plain even split.
+        """
         if self.total_price is None:
             return None
+        overrides = [
+            d.cost_override for d in self.devices.all() if d.cost_override is not None
+        ]
         n = self.expected_units or self.devices.count()
-        if not n:
+        remaining_n = n - len(overrides)
+        if remaining_n <= 0:
             return None
-        return (self.total_price / n).quantize(Decimal("0.01"))
+        remainder = self.total_price - sum(overrides)
+        return (remainder / remaining_n).quantize(Decimal("0.01"))

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import type { CashSummary } from "@/lib/api/cash";
 import type { Options } from "@/lib/api/options";
 import type { Purchase } from "@/lib/api/purchases";
 import { formatDate, formatPrice } from "@/lib/format";
@@ -74,18 +76,27 @@ function sortValue(p: Purchase, key: SortKey): string | number | null {
 
 // One component, two tabs: /purchases renders kind="device" (lots that split
 // into device rows), /parts renders kind="parts" (the loose parts ledger).
+// Signed money display for the net line: -$75.50, not $-75.50.
+function signedPrice(value: string): string {
+  const n = Number(value);
+  return `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
+}
+
 export default function PurchasesView({
   purchases: allPurchases,
   options,
   error,
   initialQuery = "",
   kind = "device",
+  cash = null,
 }: {
   purchases: Purchase[];
   options: Options;
   error: string | null;
   initialQuery?: string;
   kind?: Purchase["kind"];
+  // Whole-project cash position (money in vs out) — /purchases only.
+  cash?: CashSummary | null;
 }) {
   const parts = kind === "parts";
   const purchases = useMemo(
@@ -137,6 +148,12 @@ export default function PurchasesView({
               ? "— ordered at some point; arrival is the state"
               : "— money lives here; devices split the lot"}
           </p>
+          {cash && (
+            <p className="subtitle" title={`${cash.purchase_count} purchases · ${cash.exit_count} exits`}>
+              Cash position: {signedPrice(cash.money_out)} out ·{" "}
+              {signedPrice(cash.money_in)} in · net {signedPrice(cash.net)}
+            </p>
+          )}
         </div>
         <button className="btn-primary" onClick={() => setModal({ mode: "create" })}>
           {parts ? "+ Parts order" : "+ Purchase"}
@@ -220,8 +237,12 @@ export default function PurchasesView({
           </thead>
           <tbody>
             {pager.paged.map((p) => (
-              <tr key={p.id}>
-                <td className="device">{p.source ?? "—"}</td>
+              <tr key={p.id} className="row-link">
+                <td className="device">
+                  <Link href={`/purchases/${p.id}`} className="row-link-anchor">
+                    {p.source ?? "—"}
+                  </Link>
+                </td>
                 <td>
                   {p.url ? (
                     <a

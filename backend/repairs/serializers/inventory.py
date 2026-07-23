@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from repairs.models import Device, DeviceReference, Location, Purchase
 
+from .exits import ExitSerializer
 from .purchases import PurchaseSerializer
 from .reference import DeviceReferenceSerializer
 from .repairlog import RepairWithNotesSerializer
@@ -15,6 +16,7 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
     purchase = PurchaseSerializer(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     repair_count = serializers.IntegerField(source="repairs.count", read_only=True)
+    unit_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -26,15 +28,20 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
             "serial",
             "location",
             "purchase",
-            "to_who",
             "notes",
             "status",
             "status_display",
             "repair_count",
+            "cost_override",
+            "unit_cost",
         ]
 
     def get_label(self, obj) -> str:
         return str(obj)
+
+    def get_unit_cost(self, obj) -> str | None:
+        cost = obj.unit_cost
+        return str(cost) if cost is not None else None
 
 
 class DeviceDetailSerializer(serializers.ModelSerializer):
@@ -46,6 +53,8 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reference = DeviceReferenceSerializer(read_only=True)
     repairs = RepairWithNotesSerializer(many=True, read_only=True)
+    exits = ExitSerializer(many=True, read_only=True)
+    unit_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -56,16 +65,22 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "serial",
             "location",
             "purchase",
-            "to_who",
             "notes",
             "status",
             "status_display",
             "reference",
             "repairs",
+            "exits",
+            "cost_override",
+            "unit_cost",
         ]
 
     def get_label(self, obj) -> str:
         return str(obj)
+
+    def get_unit_cost(self, obj) -> str | None:
+        cost = obj.unit_cost
+        return str(cost) if cost is not None else None
 
 
 class DeviceWriteSerializer(serializers.ModelSerializer):
@@ -96,9 +111,9 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
             "serial",
             "location",
             "purchase",
-            "to_who",
             "notes",
             "status",
+            "cost_override",
         ]
 
     def _resolve_lookups(self, validated_data):
@@ -120,23 +135,35 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class DeviceBulkCreateSerializer(serializers.Serializer):
-    """Spawn N identical device rows from one purchase ('3x controllers arrived').
+class BulkLineSerializer(serializers.Serializer):
+    """One homogeneous slice of a lot: N units of one catalog model."""
 
-    Per-unit identity (model #, serial) is refined afterward on each row — this
-    creates the skeletons that the lot's money splits across.
+    reference = serializers.PrimaryKeyRelatedField(
+        queryset=DeviceReference.objects.all(), required=False, allow_null=True, default=None
+    )
+    quantity = serializers.IntegerField(min_value=1, max_value=100)
+
+
+class DeviceBulkCreateSerializer(serializers.Serializer):
+    """Spawn device rows from one purchase ('2x DS5 + 3x DS4 arrived').
+
+    Lines carry the heterogeneity — each line is reference × quantity; shared
+    fields (purchase, location, status, notes) apply to every spawned row.
+    Per-unit identity (serial, cost override) is refined afterward on each row.
     """
 
     purchase = serializers.PrimaryKeyRelatedField(
         queryset=Purchase.objects.all(), required=False, allow_null=True, default=None
     )
-    reference = serializers.PrimaryKeyRelatedField(
-        queryset=DeviceReference.objects.all(), required=False, allow_null=True, default=None
-    )
     location = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
     status = serializers.ChoiceField(choices=Device.Status.choices, default=Device.Status.SHIPPED)
-    quantity = serializers.IntegerField(min_value=1, max_value=100)
+    lines = BulkLineSerializer(many=True, allow_empty=False)
+
+    def validate_lines(self, lines):
+        if sum(line["quantity"] for line in lines) > 100:
+            raise serializers.ValidationError("At most 100 units per bulk add.")
+        return lines
 
     def create(self, validated_data):
         name = validated_data["location"].strip()
@@ -144,10 +171,11 @@ class DeviceBulkCreateSerializer(serializers.Serializer):
         return [
             Device.objects.create(
                 purchase=validated_data["purchase"],
-                reference=validated_data["reference"],
+                reference=line["reference"],
                 location=location,
                 notes=validated_data["notes"],
                 status=validated_data["status"],
             )
-            for _ in range(validated_data["quantity"])
+            for line in validated_data["lines"]
+            for _ in range(line["quantity"])
         ]

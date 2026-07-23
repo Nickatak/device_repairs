@@ -4,13 +4,15 @@ No auth in the MVP (single user, local). DRF's default permission with no
 DEFAULT_PERMISSION_CLASSES set is AllowAny, so these are open reads.
 
 Split by domain (2026-07-22), mirroring models/ and serializers/, plus
-options.py for the cross-domain combobox aggregate. This barrel keeps
+options.py and cash.py for the cross-domain aggregates. This barrel keeps
 `from repairs import views` / `from repairs.views import X` working (urls.py).
 """
 
+from .cash import CashSummaryView
+from .exits import ExitCreateView, ExitUpdateView
 from .inventory import DeviceBulkCreateView, DeviceDetailView, InventoryListView
 from .options import OptionsView
-from .purchases import PurchaseListCreateView, PurchaseUpdateView
+from .purchases import PurchaseArriveView, PurchaseDetailView, PurchaseListCreateView
 from .reference import LaneListView, ReferenceListView
 from .repairlog import (
     MeasurementCreateView,
@@ -22,8 +24,11 @@ from .repairlog import (
 )
 
 __all__ = [
+    "CashSummaryView",
     "DeviceBulkCreateView",
     "DeviceDetailView",
+    "ExitCreateView",
+    "ExitUpdateView",
     "InventoryListView",
     "LaneListView",
     "MeasurementCreateView",
@@ -31,8 +36,9 @@ __all__ = [
     "NoteCreateView",
     "NoteUpdateView",
     "OptionsView",
+    "PurchaseArriveView",
+    "PurchaseDetailView",
     "PurchaseListCreateView",
-    "PurchaseUpdateView",
     "ReferenceListView",
     "RepairCreateView",
     "RepairUpdateView",

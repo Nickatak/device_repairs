@@ -5,6 +5,7 @@ import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options, ReferenceOption } from "@/lib/api/options";
 import type { Purchase } from "@/lib/api/purchases";
 import type { DeviceWrite } from "@/app/actions";
+import { purchaseLabel } from "@/lib/purchase-format";
 import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 
 // New devices default to shipped: a row exists once it's bought and/or inbound.
@@ -13,9 +14,9 @@ const EMPTY = {
   serial: "",
   location: "",
   purchase: null as number | null,
-  to_who: "",
   notes: "",
   status: "shipped",
+  cost_override: "",
 };
 
 // A device ENTERS the system as inbound or on-hand; later lifecycle positions
@@ -35,9 +36,9 @@ export function useDeviceForm(item: InventoryItem | null) {
           serial: item.serial,
           location: item.location ?? "",
           purchase: item.purchase?.id ?? null,
-          to_who: item.to_who,
           notes: item.notes,
           status: item.status,
+          cost_override: item.cost_override ?? "",
         }
       : EMPTY,
   );
@@ -52,9 +53,9 @@ export function useDeviceForm(item: InventoryItem | null) {
       serial: form.serial,
       location: form.location,
       purchase: form.purchase,
-      to_who: form.to_who,
       notes: form.notes,
       status: form.status,
+      cost_override: form.cost_override.trim() ? form.cost_override.trim() : null,
     };
   }
 
@@ -63,12 +64,6 @@ export function useDeviceForm(item: InventoryItem | null) {
 
 function refLabel(ref: ReferenceOption): string {
   return `${ref.brand} ${ref.name}`.trim();
-}
-
-export function purchaseLabel(p: Purchase): string {
-  const parts = [p.label || p.source, p.label ? null : p.order_ref].filter(Boolean);
-  if (p.total_price !== null) parts.push(`$${p.total_price}`);
-  return parts.join(" ") || `purchase #${p.id}`;
 }
 
 function purchaseSub(p: Purchase): string {
@@ -205,14 +200,15 @@ export function DeviceFields({
           </select>
         </label>
       </div>
-      {form.status === "exited" && (
-        <label>
-          To who
-          <TextCombobox
-            value={form.to_who}
-            items={options.people}
-            onChange={(v) => set("to_who", v)}
-            placeholder="buyer, friend…"
+      {form.purchase !== null && (
+        <label className="narrow">
+          Unit cost override
+          <input
+            inputMode="decimal"
+            value={form.cost_override}
+            onChange={(e) => set("cost_override", e.target.value)}
+            placeholder="blank = even lot split"
+            title="Explicit cost for this unit in a mixed lot (2 DS5 + 3 DS4 shouldn't split evenly); the rest split the remainder"
           />
         </label>
       )}

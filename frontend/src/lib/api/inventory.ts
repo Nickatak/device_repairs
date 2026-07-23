@@ -1,6 +1,7 @@
 // Inventory — the device list and single-device detail payloads.
 
 import { API_BASE } from "./client";
+import type { Exit } from "./exits";
 import type { Purchase } from "./purchases";
 import type { ReferenceItem } from "./reference";
 import type { RepairWithNotes } from "./repairlog";
@@ -13,11 +14,12 @@ export interface InventoryItem {
   serial: string;
   location: string | null;
   purchase: Purchase | null;
-  to_who: string;
   notes: string;
   status: string;
   status_display: string;
   repair_count: number;
+  cost_override: string | null;
+  unit_cost: string | null;
 }
 
 export async function getInventory(): Promise<InventoryItem[]> {
@@ -35,12 +37,14 @@ export interface DeviceDetail {
   serial: string;
   location: string | null;
   purchase: Purchase | null;
-  to_who: string;
   notes: string;
   status: string;
   status_display: string;
   reference: ReferenceItem | null;
   repairs: RepairWithNotes[];
+  exits: Exit[];
+  cost_override: string | null;
+  unit_cost: string | null;
 }
 
 export async function getDevice(id: number): Promise<DeviceDetail> {
