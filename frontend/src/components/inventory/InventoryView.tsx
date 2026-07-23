@@ -76,7 +76,10 @@ export default function InventoryView({
   const [modal, setModal] = useState<ModalState>(null);
   // Deep-linkable: /?q=0004 lands with the search prefilled.
   const [query, setQuery] = useState(initialQuery);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  // Default view = the bench: in-repair units, when any exist. "All" is a click away.
+  const [statusFilter, setStatusFilter] = useState<string | null>(() =>
+    items.some((it) => it.status === "in_repair") ? "in_repair" : null,
+  );
   const { sort, toggle } = useSort<SortKey>();
 
   // Status chips in lifecycle order, only for statuses actually present.
