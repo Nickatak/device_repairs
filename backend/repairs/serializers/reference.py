@@ -3,7 +3,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from repairs.models import CompPull, DeviceReference, Issue, Lane, Variant
+from repairs.models import CompPull, DeviceReference, Issue, Lane, Revision, Variant
 
 # The sheet's refresh discipline: a working comp older than this is due for a re-pull.
 STALE_AFTER_DAYS = 60
@@ -18,6 +18,12 @@ class LaneSerializer(serializers.ModelSerializer):
 class VariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Variant
+        fields = ["id", "name", "note", "position"]
+
+
+class RevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revision
         fields = ["id", "name", "note", "position"]
 
 
@@ -75,6 +81,7 @@ class DeviceReferenceSerializer(serializers.ModelSerializer):
     comp_pulls = CompPullSerializer(many=True, read_only=True)
     issues = IssueSerializer(many=True, read_only=True)
     variants = VariantSerializer(many=True, read_only=True)
+    revisions = RevisionSerializer(many=True, read_only=True)
     stale = serializers.SerializerMethodField()
     gap = serializers.SerializerMethodField()
 
@@ -96,6 +103,7 @@ class DeviceReferenceSerializer(serializers.ModelSerializer):
             "comp_pulls",
             "issues",
             "variants",
+            "revisions",
             "stale",
             "gap",
         ]

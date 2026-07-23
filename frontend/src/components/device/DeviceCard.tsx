@@ -32,7 +32,8 @@ export default function DeviceCard({
           label="Model"
           value={
             device.reference
-              ? `${device.reference.brand} ${device.reference.name}`.trim()
+              ? `${device.reference.brand} ${device.reference.name}`.trim() +
+                (device.revision ? ` · ${device.revision.name}` : "")
               : null
           }
         />

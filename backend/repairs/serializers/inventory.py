@@ -2,7 +2,9 @@
 
 from rest_framework import serializers
 
-from repairs.models import Device, DeviceReference, Location, Purchase
+from repairs.models import Device, DeviceReference, Location, Purchase, Revision
+
+from .reference import RevisionSerializer
 
 from .exits import ExitSerializer
 from .purchases import PurchaseSerializer
@@ -17,6 +19,7 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     repair_count = serializers.IntegerField(source="repairs.count", read_only=True)
     unit_cost = serializers.SerializerMethodField()
+    revision = RevisionSerializer(read_only=True)
 
     class Meta:
         model = Device
@@ -25,6 +28,7 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
             "label",
             "ledger_ref",
             "reference",
+            "revision",
             "serial",
             "location",
             "purchase",
@@ -52,6 +56,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
     purchase = PurchaseSerializer(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reference = DeviceReferenceSerializer(read_only=True)
+    revision = RevisionSerializer(read_only=True)
     repairs = RepairWithNotesSerializer(many=True, read_only=True)
     exits = ExitSerializer(many=True, read_only=True)
     unit_cost = serializers.SerializerMethodField()
@@ -62,6 +67,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "id",
             "label",
             "ledger_ref",
+            "revision",
             "serial",
             "location",
             "purchase",
@@ -99,6 +105,9 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
     reference = serializers.PrimaryKeyRelatedField(
         queryset=DeviceReference.objects.all(), required=False, allow_null=True
     )
+    revision = serializers.PrimaryKeyRelatedField(
+        queryset=Revision.objects.all(), required=False, allow_null=True
+    )
     purchase = serializers.PrimaryKeyRelatedField(
         queryset=Purchase.objects.all(), required=False, allow_null=True
     )
@@ -108,6 +117,7 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
         model = Device
         fields = [
             "reference",
+            "revision",
             "serial",
             "location",
             "purchase",
@@ -115,6 +125,23 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
             "status",
             "cost_override",
         ]
+
+    def validate(self, attrs):
+        # Revision must belong to the device's reference — resolve both against
+        # what this write leaves in place, not just what it sends.
+        revision = attrs.get(
+            "revision", getattr(self.instance, "revision", None)
+        )
+        reference = (
+            attrs["reference"]
+            if "reference" in attrs
+            else getattr(self.instance, "reference", None)
+        )
+        if revision and (reference is None or revision.reference_id != reference.id):
+            raise serializers.ValidationError(
+                {"revision": "Revision must belong to the device's reference."}
+            )
+        return attrs
 
     def _resolve_lookups(self, validated_data):
         """Pop each provided lookup field, returning {field: instance-or-None}."""

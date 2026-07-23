@@ -161,21 +161,29 @@ class Measurement(models.Model):
 
 
 class Part(models.Model):
-    """Consumed into the board at a Note. Free text, no money, no stock link.
+    """Consumed into the board at a Note — the DRAW side of the stock ledger.
 
-    ASPIRATIONAL (Nick, 2026-07-23): "counts toward the device's parts cost"
-    is the intent, not the implementation — there is no cost field and no
-    relationship to Purchase(kind=parts) or to any stock entity yet. The join
-    (purchases feed stock, Parts draw from it) is the future materials/stock
-    migration.
+    `stock_item` links the draw to a stock bucket: draws against a COUNTED
+    bucket subtract from its derived live count (see StockItem.count). Free-text
+    `name` stays as the fallback for off-stock parts. Still ASPIRATIONAL: no
+    cost field — per-device parts cost is future work.
 
     A corrective note may record consumed Parts or none at all — 'fix' != 'install a part'.
     """
 
     note = models.ForeignKey(Note, on_delete=models.CASCADE, related_name="parts")
+    stock_item = models.ForeignKey(
+        "repairs.StockItem",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="draws",
+        help_text="Stock bucket this came from. Null = off-stock / one-off part.",
+    )
     name = models.CharField(max_length=200)
     quantity = models.PositiveIntegerField(default=1)
     comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.quantity}× {self.name}"

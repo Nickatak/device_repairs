@@ -14,6 +14,7 @@ function asInventoryItem(device: DeviceDetailT): InventoryItem {
     label: device.label,
     ledger_ref: device.ledger_ref,
     reference: device.reference?.id ?? null,
+    revision: device.revision,
     serial: device.serial,
     location: device.location,
     purchase: device.purchase,

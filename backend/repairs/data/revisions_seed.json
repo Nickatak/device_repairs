@@ -1,0 +1,56 @@
+[
+  {
+    "brand": "Sony",
+    "name": "DualShock 4 (v1)",
+    "revisions": [
+      {"name": "JDM-001", "note": "v1 (CUH-ZCT1x). Rubber/film family with 011."},
+      {"name": "JDM-011", "note": "v1 (CUH-ZCT1x). Rubber/film family with 001."},
+      {"name": "JDM-020", "note": "v1 (CUH-ZCT1x). Only rev with no position in any parts-sharing family — resolve against 001/011 and 030/040 families on first 020 unit."},
+      {"name": "JDM-030", "note": "v1 (CUH-ZCT1x). Rubber family with 040 — a cross-generation share, bench-confirmed 2026-07-16."}
+    ]
+  },
+  {
+    "brand": "Sony",
+    "name": "DualShock 4 (v2)",
+    "revisions": [
+      {"name": "JDM-040", "note": "v2 (CUH-ZCT2x). Rubber family with 030 (cross-gen, bench-confirmed)."},
+      {"name": "JDM-050", "note": "v2 (CUH-ZCT2x). No 050 unit crossed the bench yet — 055-film fit and daughterboard interchange still open."},
+      {"name": "JDM-055", "note": "v2 (CUH-ZCT2x). Rubber family with 050."}
+    ]
+  },
+  {
+    "brand": "Sony",
+    "name": "DualShock 4 (v1/v2 hall exit class)",
+    "revisions": [
+      {"name": "JDM-001", "note": "v1 (CUH-ZCT1x)."},
+      {"name": "JDM-011", "note": "v1 (CUH-ZCT1x)."},
+      {"name": "JDM-020", "note": "v1 (CUH-ZCT1x). No parts-sharing family position — open."},
+      {"name": "JDM-030", "note": "v1 (CUH-ZCT1x)."},
+      {"name": "JDM-040", "note": "v2 (CUH-ZCT2x)."},
+      {"name": "JDM-050", "note": "v2 (CUH-ZCT2x)."},
+      {"name": "JDM-055", "note": "v2 (CUH-ZCT2x)."}
+    ]
+  },
+  {
+    "brand": "Sony",
+    "name": "DualSense (PS5)",
+    "revisions": [
+      {"name": "BDM-010", "note": ""},
+      {"name": "BDM-020", "note": ""},
+      {"name": "BDM-030", "note": ""},
+      {"name": "BDM-040", "note": ""},
+      {"name": "BDM-050", "note": "Aftermarket V1-V5 pack naming maps to BDM revs — mapping unresolved."}
+    ]
+  },
+  {
+    "brand": "Sony",
+    "name": "DualSense special editions (hall exit class)",
+    "revisions": [
+      {"name": "BDM-010", "note": ""},
+      {"name": "BDM-020", "note": ""},
+      {"name": "BDM-030", "note": ""},
+      {"name": "BDM-040", "note": ""},
+      {"name": "BDM-050", "note": ""}
+    ]
+  }
+]

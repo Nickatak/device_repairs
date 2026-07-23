@@ -19,7 +19,10 @@ from .models import (
     Part,
     Purchase,
     Repair,
+    Revision,
     Source,
+    StockIntake,
+    StockItem,
     Variant,
 )
 
@@ -119,6 +122,14 @@ class VariantInline(admin.TabularInline):
     fields = ("name", "note", "position")
 
 
+class RevisionInline(admin.TabularInline):
+    """Board revisions of this model — the compatibility axis (JDM-055, BDM-020)."""
+
+    model = Revision
+    extra = 0
+    fields = ("name", "note", "position")
+
+
 class CompPullInline(admin.TabularInline):
     """Newest-first pull history on the catalog row. Append rows; don't edit history."""
 
@@ -143,7 +154,7 @@ class DeviceReferenceAdmin(admin.ModelAdmin):
     search_fields = ("brand", "name", "model_numbers", "sku_prefix", "configurations")
     ordering = ("lane__name", "brand", "release_year", "name")
     autocomplete_fields = ("lane",)
-    inlines = (VariantInline, IssueInline, CompPullInline)
+    inlines = (RevisionInline, VariantInline, IssueInline, CompPullInline)
 
 
 @admin.register(CompPull)
@@ -158,6 +169,31 @@ class CompPullAdmin(admin.ModelAdmin):
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
     search_fields = ("name",)
+
+
+class StockIntakeInline(admin.TabularInline):
+    model = StockIntake
+    extra = 0
+    fields = ("purchase", "quantity", "note", "created_at")
+    readonly_fields = ("created_at",)
+    autocomplete_fields = ("purchase",)
+
+
+@admin.register(StockItem)
+class StockItemAdmin(admin.ModelAdmin):
+    list_display = ("name", "category", "mode", "state", "count", "last_count", "counted_at")
+    list_filter = ("mode", "state", "category")
+    search_fields = ("name", "category", "note")
+    filter_horizontal = ("fits_references", "fits_revisions")
+    inlines = (StockIntakeInline,)
+
+
+@admin.register(Revision)
+class RevisionAdmin(admin.ModelAdmin):
+    list_display = ("name", "reference", "position")
+    list_filter = ("reference__lane",)
+    search_fields = ("name", "reference__brand", "reference__name")
+    autocomplete_fields = ("reference",)
 
 
 admin.site.site_header = "Repair working log"

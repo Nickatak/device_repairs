@@ -11,6 +11,15 @@ export interface Variant {
   position: number;
 }
 
+// A board/hardware revision — the compatibility axis (JDM-055, BDM-020).
+// Variants change the shell; revisions change what parts fit.
+export interface Revision {
+  id: number;
+  name: string;
+  note: string;
+  position: number;
+}
+
 export interface CompPull {
   id: number;
   variant: number | null;
@@ -57,6 +66,7 @@ export interface ReferenceItem {
   comp_pulls: CompPull[];
   issues: Issue[];
   variants: Variant[];
+  revisions: Revision[];
   stale: boolean;
   gap: boolean;
 }

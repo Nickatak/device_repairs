@@ -3,7 +3,7 @@
 import { API_BASE } from "./client";
 import type { Exit } from "./exits";
 import type { Purchase } from "./purchases";
-import type { ReferenceItem } from "./reference";
+import type { ReferenceItem, Revision } from "./reference";
 import type { RepairWithNotes } from "./repairlog";
 
 export interface InventoryItem {
@@ -11,6 +11,7 @@ export interface InventoryItem {
   label: string;
   ledger_ref: string;
   reference: number | null;
+  revision: Revision | null;
   serial: string;
   location: string | null;
   purchase: Purchase | null;
@@ -41,6 +42,7 @@ export interface DeviceDetail {
   status: string;
   status_display: string;
   reference: ReferenceItem | null;
+  revision: Revision | null;
   repairs: RepairWithNotes[];
   exits: Exit[];
   cost_override: string | null;

@@ -9,12 +9,14 @@ export interface StatusOption {
 }
 
 // Light catalog projection for the device form's reference combobox.
+// Revisions ride along so the form's revision picker filters to the reference.
 export interface ReferenceOption {
   id: number;
   brand: string;
   name: string;
   sku_prefix: string;
   model_numbers: string;
+  revisions: { id: number; name: string }[];
 }
 
 export interface Options {

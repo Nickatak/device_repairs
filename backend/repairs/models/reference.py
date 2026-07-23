@@ -186,6 +186,44 @@ class Variant(models.Model):
         return f"{self.name} — {self.reference}"
 
 
+class Revision(models.Model):
+    """A board/hardware revision of a catalog model — JDM-055, BDM-020.
+
+    Distinct from Variant on purpose: a revision changes what PARTS FIT
+    (compatibility axis); a variant changes what the shell looks like (price
+    axis). First-class per Nick's 2026-07-23 call — "by forcing a shape to a
+    model, we can see if it's accurate or not": the rev knowledge accreted in
+    references/ds4-rev-map.md becomes rows so stock compatibility and per-unit
+    identity can join against it.
+    """
+
+    reference = models.ForeignKey(
+        DeviceReference, on_delete=models.CASCADE, related_name="revisions"
+    )
+    name = models.CharField(max_length=60, help_text="'JDM-055', 'BDM-020', '1708'.")
+    note = models.TextField(
+        blank=True,
+        help_text=(
+            "ID tells + open questions ('no sharing-family position — resolve "
+            "on first unit'). Parts-sharing knowledge belongs on stock buckets, not here."
+        ),
+    )
+    position = models.PositiveIntegerField(
+        default=0, help_text="Manual ordering within the reference's list."
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reference", "name"], name="unique_revision_per_reference"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} — {self.reference}"
+
+
 class CompPull(models.Model):
     """One market observation for a catalog row. Append-only: current = latest.
 

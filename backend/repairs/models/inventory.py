@@ -2,8 +2,10 @@
 
 from django.db import models
 
+from django.core.exceptions import ValidationError
+
 from .purchases import Purchase
-from .reference import DeviceReference
+from .reference import DeviceReference, Revision
 
 
 class Location(models.Model):
@@ -71,6 +73,17 @@ class Device(models.Model):
         related_name="units",
         help_text="Catalog entry for this model (year, configs, faults). Null = off-catalog.",
     )
+    revision = models.ForeignKey(
+        Revision,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="units",
+        help_text=(
+            "Board revision, once read off the silkscreen (JDM-040). Must belong "
+            "to this device's reference. Null = not yet identified."
+        ),
+    )
     serial = models.CharField(max_length=120, blank=True)
     location = models.ForeignKey(
         Location,
@@ -105,6 +118,12 @@ class Device(models.Model):
     notes = models.TextField(
         blank=True, help_text="Facts about the unit, not any one step (e.g. 'uses a 19V brick')."
     )
+
+    def clean(self):
+        if self.revision_id and self.revision.reference_id != self.reference_id:
+            raise ValidationError(
+                "Revision must belong to this device's reference."
+            )
 
     @property
     def unit_cost(self):

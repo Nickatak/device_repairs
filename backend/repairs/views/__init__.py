@@ -22,6 +22,13 @@ from .repairlog import (
     RepairCreateView,
     RepairUpdateView,
 )
+from .stock import (
+    StockDetailView,
+    StockIntakeCreateView,
+    StockIntakeUpdateView,
+    StockListCreateView,
+    StockRecountView,
+)
 
 __all__ = [
     "CashSummaryView",
@@ -42,4 +49,9 @@ __all__ = [
     "ReferenceListView",
     "RepairCreateView",
     "RepairUpdateView",
+    "StockDetailView",
+    "StockIntakeCreateView",
+    "StockIntakeUpdateView",
+    "StockListCreateView",
+    "StockRecountView",
 ]

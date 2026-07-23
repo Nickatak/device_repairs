@@ -27,7 +27,15 @@ from .reference import (
     DeviceReferenceSerializer,
     IssueSerializer,
     LaneSerializer,
+    RevisionSerializer,
     VariantSerializer,
+)
+from .stock import (
+    RecountSerializer,
+    StockIntakeSerializer,
+    StockIntakeWriteSerializer,
+    StockItemSerializer,
+    StockItemWriteSerializer,
 )
 from .repairlog import (
     COMPLETED_REPAIR_ERROR,
@@ -63,8 +71,14 @@ __all__ = [
     "PurchaseSerializer",
     "PurchaseUnitSerializer",
     "PurchaseWriteSerializer",
+    "RecountSerializer",
     "RepairCreateSerializer",
     "RepairWithNotesSerializer",
     "RepairWriteSerializer",
+    "RevisionSerializer",
+    "StockIntakeSerializer",
+    "StockIntakeWriteSerializer",
+    "StockItemSerializer",
+    "StockItemWriteSerializer",
     "VariantSerializer",
 ]

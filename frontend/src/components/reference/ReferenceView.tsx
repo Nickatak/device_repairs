@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompPull, Issue, ReferenceItem, Variant } from "@/lib/api/reference";
+import type { CompPull, Issue, ReferenceItem, Revision, Variant } from "@/lib/api/reference";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
@@ -136,6 +136,21 @@ function VariantChips({ variants }: { variants: Variant[] }) {
         <span key={v.id} title={v.note || undefined}>
           {i > 0 && " · "}
           {v.name}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+// The compatibility axis: board revs whose parts differ (JDM-055, BDM-020).
+function RevisionChips({ revisions }: { revisions: Revision[] }) {
+  return (
+    <p className="ref-configs">
+      <strong>Revisions:</strong>{" "}
+      {revisions.map((r, i) => (
+        <span key={r.id} title={r.note || undefined}>
+          {i > 0 && " · "}
+          {r.name}
         </span>
       ))}
     </p>
@@ -349,6 +364,7 @@ export default function ReferenceView({
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
                         <td colSpan={5}>
+                          {it.revisions.length > 0 && <RevisionChips revisions={it.revisions} />}
                           {it.variants.length > 0 && <VariantChips variants={it.variants} />}
                           {it.issues.length > 0 && <IssueTable issues={it.issues} />}
                           {it.stop_note && (

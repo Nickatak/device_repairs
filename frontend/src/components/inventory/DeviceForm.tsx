@@ -11,6 +11,7 @@ import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 // New devices default to shipped: a row exists once it's bought and/or inbound.
 const EMPTY = {
   reference: null as number | null,
+  revision: null as number | null,
   serial: "",
   location: "",
   purchase: null as number | null,
@@ -33,6 +34,7 @@ export function useDeviceForm(item: InventoryItem | null) {
     item
       ? {
           reference: item.reference,
+          revision: item.revision?.id ?? null,
           serial: item.serial,
           location: item.location ?? "",
           purchase: item.purchase?.id ?? null,
@@ -50,6 +52,7 @@ export function useDeviceForm(item: InventoryItem | null) {
   function buildData(): DeviceWrite {
     return {
       reference: form.reference,
+      revision: form.revision,
       serial: form.serial,
       location: form.location,
       purchase: form.purchase,
@@ -145,6 +148,8 @@ export function DeviceFields({
     : options.statuses;
   const selectedPurchase =
     options.purchases.find((p) => p.id === form.purchase) ?? null;
+  const revisions =
+    options.references.find((r) => r.id === form.reference)?.revisions ?? [];
   return (
     <>
       <label>
@@ -152,9 +157,32 @@ export function DeviceFields({
         <ReferenceCombobox
           value={form.reference}
           references={options.references}
-          onChange={(id) => set("reference", id)}
+          onChange={(id) => {
+            set("reference", id);
+            // A revision belongs to one reference — changing model clears it.
+            set("revision", null);
+          }}
         />
       </label>
+      {revisions.length > 0 && (
+        <label className="narrow">
+          Board revision
+          <select
+            value={form.revision ?? ""}
+            onChange={(e) =>
+              set("revision", e.target.value ? Number(e.target.value) : null)
+            }
+            title="Read off the silkscreen once the shell is open (JDM-040). Blank = not yet identified."
+          >
+            <option value="">not identified</option>
+            {revisions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         Serial
         <input value={form.serial} onChange={(e) => set("serial", e.target.value)} />

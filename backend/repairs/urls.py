@@ -19,6 +19,11 @@ from .views import (
     NoteUpdateView,
     RepairCreateView,
     RepairUpdateView,
+    StockDetailView,
+    StockIntakeCreateView,
+    StockIntakeUpdateView,
+    StockListCreateView,
+    StockRecountView,
 )
 
 urlpatterns = [
@@ -36,6 +41,11 @@ urlpatterns = [
     path("purchases/", PurchaseListCreateView.as_view(), name="purchases"),
     path("purchases/<int:pk>/", PurchaseDetailView.as_view(), name="purchase-detail"),
     path("purchases/<int:pk>/arrive/", PurchaseArriveView.as_view(), name="purchase-arrive"),
+    path("stock/", StockListCreateView.as_view(), name="stock"),
+    path("stock/<int:pk>/", StockDetailView.as_view(), name="stock-detail"),
+    path("stock/<int:pk>/recount/", StockRecountView.as_view(), name="stock-recount"),
+    path("stock/intakes/", StockIntakeCreateView.as_view(), name="stock-intake-create"),
+    path("stock/intakes/<int:pk>/", StockIntakeUpdateView.as_view(), name="stock-intake-update"),
     path("exits/", ExitCreateView.as_view(), name="exit-create"),
     path("exits/<int:pk>/", ExitUpdateView.as_view(), name="exit-update"),
     path("cash/", CashSummaryView.as_view(), name="cash"),

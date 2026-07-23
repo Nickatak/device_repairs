@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/purchases", label: "Purchases" },
   { href: "/", label: "Inventory" },
   { href: "/parts", label: "Parts" },
+  { href: "/stock", label: "Stock" },
 ];
 
 export default function Navbar() {

@@ -12,8 +12,9 @@ catalog), inventory (physical units), repairlog (bench work). This barrel keeps
 from .exits import Exit
 from .inventory import Device, Location
 from .purchases import Purchase, Source
-from .reference import CompPull, DeviceReference, Issue, Lane, Variant
+from .reference import CompPull, DeviceReference, Issue, Lane, Revision, Variant
 from .repairlog import Measurement, Media, Note, Part, Repair
+from .stock import StockIntake, StockItem
 
 __all__ = [
     "CompPull",
@@ -29,6 +30,9 @@ __all__ = [
     "Part",
     "Purchase",
     "Repair",
+    "Revision",
     "Source",
+    "StockIntake",
+    "StockItem",
     "Variant",
 ]

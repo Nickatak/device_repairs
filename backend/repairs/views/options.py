@@ -18,12 +18,26 @@ class OptionsView(APIView):
                 # projection; the full price-sheet payload stays on /reference/.
                 # Most-recently-USED first (highest linked device id — devices
                 # carry no timestamp, so row id is the recency proxy); never-used
-                # rows follow alphabetically.
-                "references": list(
-                    DeviceReference.objects.annotate(last_used=Max("units__id"))
+                # rows follow alphabetically. Revisions ride along so the form's
+                # revision picker can filter to the chosen reference.
+                "references": [
+                    {
+                        "id": ref.id,
+                        "brand": ref.brand,
+                        "name": ref.name,
+                        "sku_prefix": ref.sku_prefix,
+                        "model_numbers": ref.model_numbers,
+                        "revisions": [
+                            {"id": rev.id, "name": rev.name}
+                            for rev in ref.revisions.all()
+                        ],
+                    }
+                    for ref in DeviceReference.objects.annotate(
+                        last_used=Max("units__id")
+                    )
                     .order_by(F("last_used").desc(nulls_last=True), "brand", "name")
-                    .values("id", "brand", "name", "sku_prefix", "model_numbers")
-                ),
+                    .prefetch_related("revisions")
+                ],
                 # Most-recently-used first (same device-id proxy as references).
                 "locations": list(
                     Location.objects.annotate(last_used=Max("devices__id"))

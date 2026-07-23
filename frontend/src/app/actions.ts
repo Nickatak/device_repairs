@@ -7,6 +7,7 @@ const API_BASE =
 
 export interface DeviceWrite {
   reference: number | null;
+  revision: number | null;
   serial: string;
   location: string;
   purchase: number | null;
@@ -125,6 +126,49 @@ export async function updateExit(
     "/purchases",
     "/",
   ]);
+}
+
+export interface StockItemWrite {
+  name: string;
+  category: string;
+  note: string;
+  mode: "counted" | "presence";
+  state: "in_stock" | "low" | "out";
+  fits_references: number[];
+  fits_revisions: number[];
+}
+
+export async function createStockItem(data: StockItemWrite): Promise<WriteResult> {
+  return send(`${API_BASE}/stock/`, "POST", data, "/stock");
+}
+
+export async function updateStockItem(
+  id: number,
+  data: StockItemWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/stock/${id}/`, "PATCH", data, "/stock");
+}
+
+// The physical recount: new base + server-side counted_at stamp. The count is
+// never written directly — it moves via intakes, draws, and this.
+export async function recountStockItem(
+  id: number,
+  count: number,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/stock/${id}/recount/`, "POST", { count }, "/stock");
+}
+
+export interface StockIntakeWrite {
+  purchase: number;
+  stock_item: number;
+  quantity: number;
+  note: string;
+}
+
+export async function createStockIntake(
+  data: StockIntakeWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/stock/intakes/`, "POST", data, "/stock");
 }
 
 async function send(
