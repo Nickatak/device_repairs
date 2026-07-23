@@ -1,4 +1,4 @@
-import { getLanes, getReference, type Lane, type ReferenceItem } from "@/lib/api/reference";
+import { getReference, type ReferenceItem } from "@/lib/api/reference";
 import ReferenceView from "@/components/reference/ReferenceView";
 
 // The sheet changes with every comp pull — always fetch fresh.
@@ -6,13 +6,12 @@ export const dynamic = "force-dynamic";
 
 export default async function ReferencePage() {
   let items: ReferenceItem[] = [];
-  let lanes: Lane[] = [];
   let error: string | null = null;
   try {
-    [items, lanes] = await Promise.all([getReference(), getLanes()]);
+    items = await getReference();
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
   }
 
-  return <ReferenceView items={items} lanes={lanes} error={error} />;
+  return <ReferenceView items={items} error={error} />;
 }

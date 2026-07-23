@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompPull, Issue, Lane, ReferenceItem, Variant } from "@/lib/api/reference";
+import type { CompPull, Issue, ReferenceItem, Variant } from "@/lib/api/reference";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
@@ -186,11 +186,9 @@ function PullHistory({ pulls }: { pulls: CompPull[] }) {
 
 export default function ReferenceView({
   items,
-  lanes,
   error,
 }: {
   items: ReferenceItem[];
-  lanes: Lane[];
   error: string | null;
 }) {
   const [query, setQuery] = useState("");
@@ -200,9 +198,6 @@ export default function ReferenceView({
   const [hasCompOnly, setHasCompOnly] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const { sort, toggle } = useSort<SortKey>();
-
-  const doctrine = lanes.find((l) => l.name === "doctrine");
-  const selectedLane = lanes.find((l) => l.name === lane);
 
   // Only show chips for lanes that actually have rows, in alphabetical order.
   const presentLanes = useMemo(
@@ -244,22 +239,7 @@ export default function ReferenceView({
         <p className="error">Could not load the price sheet: {error}</p>
       ) : (
         <>
-          {doctrine?.policy && (
-            <details className="lane-policy">
-              <summary>Sheet doctrine — the 1/3 rule, symptom-decoding, velocity regimes</summary>
-              <pre>{doctrine.policy}</pre>
-            </details>
-          )}
-
           <div className="ref-controls">
-            <input
-              className="ref-search"
-              type="search"
-              placeholder="Search model, brand, SKU prefix, lane…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
             <div className="ref-filters">
               <button
                 className={lane === "all" ? "ref-chip active" : "ref-chip"}
@@ -296,12 +276,16 @@ export default function ReferenceView({
             </div>
           </div>
 
-          {selectedLane?.policy && (
-            <details className="lane-policy">
-              <summary>{laneLabel(selectedLane.name)} lane policy</summary>
-              <pre>{selectedLane.policy}</pre>
-            </details>
-          )}
+          <div className="ref-controls">
+            <input
+              className="ref-search"
+              type="search"
+              placeholder="Search model, brand, SKU prefix, lane…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
 
           {filtered.length === 0 ? (
             <p className="empty">No rows match.</p>
