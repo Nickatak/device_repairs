@@ -67,9 +67,6 @@ export default function DeviceDetail({
         <DeviceCard device={device} onEdit={() => setEditing(true)} />
       )}
 
-      {/* Departure history — any state can exit (scrap a dud mid-repair, sell as-is). */}
-      <Exits deviceId={device.id} exits={device.exits} options={options} />
-
       <div className="repairs-head">
         <h2>Bench log</h2>
         <button
@@ -154,6 +151,10 @@ export default function DeviceDetail({
           </section>
         ))
       )}
+
+      {/* Departure history below the bench log — the timeline's natural end.
+          Any state can exit (scrap a dud mid-repair, sell as-is). */}
+      <Exits deviceId={device.id} exits={device.exits} options={options} />
 
       {modal && (
         <NoteModal
