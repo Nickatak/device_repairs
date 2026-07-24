@@ -33,17 +33,24 @@ class Device(models.Model):
     """
 
     class Status(models.TextChoices):
-        # Five states (Nick, 2026-07-21 — 'diagnosed isn't actually a thing'):
-        # inbound → on-hand → bench → done → gone. The exit REASON (sold/parted/
-        # gifted…) lives in notes / exit detail, not as status positions.
+        # Two-family bench split (Nick, 2026-07-24, replacing in_repair/fixed):
+        # the Disassembled family is PHYSICAL — it enumerates what's open on the
+        # desk — with the sub-state naming what the unit is WAITING FOR (not
+        # whether it's blocked). Re-assembled = shell closed; tested is the old
+        # "fixed". A force-parked unit (shell closed mid-repair, open-gate rule)
+        # leaves the Disassembled family — its pending work lives in notes.
+        # The exit REASON (sold/parted/gifted…) stays in exit detail, not here.
         SHIPPED = "shipped", "Shipped (inbound)"
         ACQUIRED = "acquired", "Acquired"
-        IN_REPAIR = "in_repair", "In repair"
-        FIXED = "fixed", "Fixed"
+        DIS_DIAGNOSING = "disassembled_diagnosing", "Disassembled: Diagnosing"
+        DIS_PARTS = "disassembled_parts", "Disassembled: Parts"
+        DIS_SOLDER = "disassembled_solder", "Disassembled: Solder"
+        RE_UNTESTED = "reassembled_untested", "Re-assembled: Untested"
+        RE_TESTED = "reassembled_tested", "Re-assembled: Tested"
         EXITED = "exited", "Exited"
 
     status = models.CharField(
-        max_length=20,
+        max_length=40,
         choices=Status.choices,
         default=Status.ACQUIRED,
         help_text="Lifecycle position, manually set — mirrors the tracking ledger.",

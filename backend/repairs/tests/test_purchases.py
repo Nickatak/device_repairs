@@ -145,7 +145,7 @@ class PurchaseDetailTests(TestCase):
     def test_arrive_stamps_date_and_flips_shipped_units_only(self):
         lot = Purchase.objects.create()
         shipped = Device.objects.create(purchase=lot, status="shipped")
-        already_bench = Device.objects.create(purchase=lot, status="in_repair")
+        already_bench = Device.objects.create(purchase=lot, status="disassembled_diagnosing")
         other_lot_unit = Device.objects.create(
             purchase=Purchase.objects.create(), status="shipped"
         )
@@ -162,7 +162,7 @@ class PurchaseDetailTests(TestCase):
         other_lot_unit.refresh_from_db()
         self.assertEqual(str(lot.arrived_on), "2026-07-20")
         self.assertEqual(shipped.status, "acquired")
-        self.assertEqual(already_bench.status, "in_repair")
+        self.assertEqual(already_bench.status, "disassembled_diagnosing")
         self.assertEqual(other_lot_unit.status, "shipped")
 
     def test_arrive_defaults_to_today(self):

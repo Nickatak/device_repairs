@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
-import { bandClass, formatDate, formatPrice } from "@/lib/format";
+import { bandClass, formatDate, formatPrice, isDisassembled } from "@/lib/format";
 import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
 import DeviceModal from "./DeviceModal";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
@@ -76,9 +76,10 @@ export default function InventoryView({
   const [modal, setModal] = useState<ModalState>(null);
   // Deep-linkable: /?q=0004 lands with the search prefilled.
   const [query, setQuery] = useState(initialQuery);
-  // Default view = the bench: in-repair units, when any exist. "All" is a click away.
+  // Default view = the desk: the Disassembled family, when any exist. "All" is
+  // a click away. "disassembled" is the family pseudo-filter (prefix match).
   const [statusFilter, setStatusFilter] = useState<string | null>(() =>
-    items.some((it) => it.status === "in_repair") ? "in_repair" : null,
+    items.some((it) => isDisassembled(it.status)) ? "disassembled" : null,
   );
   const { sort, toggle } = useSort<SortKey>();
 
@@ -86,11 +87,15 @@ export default function InventoryView({
   const presentStatuses = options.statuses.filter((s) =>
     items.some((it) => it.status === s.value),
   );
+  const anyDisassembled = items.some((it) => isDisassembled(it.status));
 
-  const visible = items.filter(
-    (it) =>
-      matches(it, query) && (statusFilter === null || it.status === statusFilter),
-  );
+  const matchesStatus = (it: InventoryItem) =>
+    statusFilter === null ||
+    (statusFilter === "disassembled"
+      ? isDisassembled(it.status)
+      : it.status === statusFilter);
+
+  const visible = items.filter((it) => matches(it, query) && matchesStatus(it));
   const filtered = visible.length !== items.length;
   applySort(visible, sort, sortValue);
   const pager = usePagination(visible);
@@ -134,6 +139,17 @@ export default function InventoryView({
           >
             All
           </button>
+          {anyDisassembled && (
+            <button
+              className={`ref-chip${statusFilter === "disassembled" ? " active" : ""}`}
+              onClick={() =>
+                setStatusFilter(statusFilter === "disassembled" ? null : "disassembled")
+              }
+              title="The whole Disassembled family — everything physically open on the desk"
+            >
+              Disassembled (all)
+            </button>
+          )}
           {presentStatuses.map((s) => (
             <button
               key={s.value}

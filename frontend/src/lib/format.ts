@@ -6,10 +6,19 @@
 const STATUS_BAND: Record<string, string> = {
   shipped: "band-holding",
   acquired: "band-inflight",
-  in_repair: "band-inflight",
-  fixed: "band-good",
+  disassembled_diagnosing: "band-inflight",
+  disassembled_parts: "band-inflight",
+  disassembled_solder: "band-inflight",
+  reassembled_untested: "band-inflight",
+  reassembled_tested: "band-good",
   exited: "band-dead",
 };
+
+// The Disassembled family = what's physically open on the desk. Prefix match
+// keeps this true if more sub-states arrive.
+export function isDisassembled(status: string): boolean {
+  return status.startsWith("disassembled_");
+}
 
 export function bandClass(status: string | null): string {
   if (!status) return "band-none";

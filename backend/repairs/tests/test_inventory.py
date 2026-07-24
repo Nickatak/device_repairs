@@ -40,19 +40,30 @@ class DeviceStatusTests(TestCase):
         device = Device.objects.create()
         res = self.client.patch(
             f"/api/v1/inventory/{device.pk}/",
-            {"status": "in_repair"},
+            {"status": "disassembled_solder"},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
         device.refresh_from_db()
-        self.assertEqual(device.status, "in_repair")
+        self.assertEqual(device.status, "disassembled_solder")
         self.assertEqual(device.repairs.count(), 0)
 
+    def test_patch_rejects_retired_status(self):
+        # The 2026-07-24 bench split retired the coarse states — the API must
+        # not quietly accept them.
+        device = Device.objects.create()
+        res = self.client.patch(
+            f"/api/v1/inventory/{device.pk}/",
+            {"status": "in_repair"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 400)
+
     def test_inventory_payload_carries_status(self):
-        Device.objects.create(status="fixed")
+        Device.objects.create(status="reassembled_tested")
         row = self.client.get("/api/v1/inventory/").json()[0]
-        self.assertEqual(row["status"], "fixed")
-        self.assertEqual(row["status_display"], "Fixed")
+        self.assertEqual(row["status"], "reassembled_tested")
+        self.assertEqual(row["status_display"], "Re-assembled: Tested")
 
     def test_repair_created_explicitly_with_measurements_bucket(self):
         device = Device.objects.create()

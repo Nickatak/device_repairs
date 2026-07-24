@@ -180,9 +180,11 @@ record.
    meaningful**: unchecked phases on a completed repair demonstrably did NOT
    happen. A completed repair is frozen (only `completed_at` itself stays
    writable; un-mark it to edit).
-6. Device lifecycle is separate: `PATCH /inventory/<id>/`
-   `{"status": "in_repair"}` when it hits the bench, `"fixed"` when done —
-   repairs never carry status.
+6. Device lifecycle is separate: `PATCH /inventory/<id>/` with the bench-split
+   statuses — `disassembled_diagnosing` when it's opened on the desk (then
+   `_parts` / `_solder` as the diagnosis lands), `reassembled_untested` when
+   the shell closes, `reassembled_tested` when function-tested — repairs never
+   carry status.
 
 ## Recipe: photos on a note (or repair)
 
@@ -241,8 +243,15 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 
 ## Enums
 
-- **Device.status**: `shipped` (inbound) → `acquired` → `in_repair` → `fixed` →
-  `exited`. Manually set except the two automatic flips (arrive, exit).
+- **Device.status** (bench split 2026-07-24): `shipped` (inbound) → `acquired` →
+  the **Disassembled family** `disassembled_diagnosing` / `disassembled_parts` /
+  `disassembled_solder` → `reassembled_untested` → `reassembled_tested` →
+  `exited`. Disassembled = physically open on Nick's desk; the sub-state names
+  what the unit is WAITING FOR (diagnosis / parts to go in / solder work), not
+  whether it's blocked. Re-assembled = shell closed; `tested` is the old
+  "fixed". A force-parked unit (shell closed mid-repair) leaves the
+  Disassembled family and its pending work lives in notes. Manually set except
+  the two automatic flips (arrive, exit).
 - **Purchase.kind**: `device`, `parts`.
 - **Exit.kind**: `sold`, `gifted`, `parted`, `scrapped`, `returned`, `lost`.
 - **Repair phases** (in order): `teardown`, `wash`, `repair`, `reassemble`,

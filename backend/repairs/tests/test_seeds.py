@@ -182,8 +182,8 @@ class SeedUnitsTests(TestCase):
         self.assertIn("[exit: sold]", unit.notes)
         self.assertEqual(unit.label, "DS4 v2 (CUH-ZCT2U)")
         self.assertIn("[bench label: CTRL_1]", unit.notes)
-        # "in-repair" (CSV) → "in_repair" (enum).
-        self.assertTrue(Device.objects.filter(status="in_repair").exists())
+        # "in-repair" (CSV) → the generic Disassembled member (bench split 2026-07-24).
+        self.assertTrue(Device.objects.filter(status="disassembled_diagnosing").exists())
         # Multi-lot ledger_ids resolve: 0010 lives in purchase "0001;0010;0022".
         keyboard = Device.objects.get(ledger_ref="0010")
         self.assertEqual(keyboard.purchase.ledger_ref, "0001;0010;0022")

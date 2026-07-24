@@ -33,9 +33,11 @@ DATA_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "device_uni
 # exit reasons survive as '[exit: …]' note markers.
 EXIT_STATUSES = {"sold", "parted", "scrapped", "gifted", "lost"}
 STATUS_MAP = {
-    "in-repair": "in_repair",
+    # Post-2026-07-24 bench split: the frozen CSV's coarse states map to the
+    # generic member of each family (this command is a historical import).
+    "in-repair": "disassembled_diagnosing",
     "diagnosed": "acquired",
-    "listed": "fixed",
+    "listed": "reassembled_tested",
     **{s: "exited" for s in EXIT_STATUSES},
 }
 
