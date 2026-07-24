@@ -3,7 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 
 export const metadata: Metadata = {
-  title: "Repair Inventory",
+  // Pages set their own name via `title`; the template appends the site name.
+  title: { default: "Inventory", template: "%s | Inventory" },
   description: "Devices on the bench — board-level repair log",
 };
 

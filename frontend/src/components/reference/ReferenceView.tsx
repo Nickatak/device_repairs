@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { CompPull, Issue, ReferenceItem, Revision, Variant } from "@/lib/api/reference";
+import type { InventoryItem } from "@/lib/api/inventory";
+import { bandClass, formatPrice } from "@/lib/format";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
@@ -157,6 +160,52 @@ function RevisionChips({ revisions }: { revisions: Revision[] }) {
   );
 }
 
+// The row's physical footprint: every ledger unit of this model, all statuses.
+// Mounts fresh each time the accordion opens, so the list starts collapsed.
+function RefDevices({ devices }: { devices: InventoryItem[] }) {
+  const [open, setOpen] = useState(false);
+  if (devices.length === 0) {
+    return <p className="ref-notes">No units in the ledger.</p>;
+  }
+  return (
+    <div>
+      <button className="ref-chip" onClick={() => setOpen(!open)}>
+        {open ? "Hide" : "Show"} {devices.length} unit{devices.length === 1 ? "" : "s"} in ledger
+      </button>
+      {open && (
+        <table className="pull-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Device</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th className="num">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {devices.map((d) => (
+              <tr key={d.id}>
+                <td>
+                  <Link className="cell-link" href={`/devices/${d.id}`}>
+                    {d.ledger_ref || `#${d.id}`}
+                  </Link>
+                </td>
+                <td>{d.label}</td>
+                <td>
+                  <span className={`badge ${bandClass(d.status)}`}>{d.status_display}</span>
+                </td>
+                <td>{d.location ?? "—"}</td>
+                <td className="num">{formatPrice(d.unit_cost)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 function PullHistory({ pulls }: { pulls: CompPull[] }) {
   if (pulls.length === 0) {
     return <p className="ref-notes">No comp pulls recorded yet — pull before first buy.</p>;
@@ -201,9 +250,11 @@ function PullHistory({ pulls }: { pulls: CompPull[] }) {
 
 export default function ReferenceView({
   items,
+  devices,
   error,
 }: {
   items: ReferenceItem[];
+  devices: InventoryItem[];
   error: string | null;
 }) {
   const [query, setQuery] = useState("");
@@ -220,8 +271,22 @@ export default function ReferenceView({
     [items],
   );
 
-  const staleCount = useMemo(() => items.filter((it) => it.stale).length, [items]);
-  const gapCount = useMemo(() => items.filter((it) => it.gap).length, [items]);
+  // Ledger units grouped by catalog row; units with no reference never surface here.
+  const devicesByRef = useMemo(() => {
+    const m = new Map<number, InventoryItem[]>();
+    for (const d of devices) {
+      if (d.reference === null) continue;
+      const list = m.get(d.reference) ?? [];
+      list.push(d);
+      m.set(d.reference, list);
+    }
+    for (const list of m.values()) {
+      list.sort((a, b) =>
+        (a.ledger_ref || `#${a.id}`).localeCompare(b.ledger_ref || `#${b.id}`),
+      );
+    }
+    return m;
+  }, [devices]);
 
   const filtered = useMemo(() => {
     const rows = items.filter(
@@ -239,17 +304,6 @@ export default function ReferenceView({
 
   return (
     <main className="wide">
-      <header className="page-head">
-        <div>
-          <h1>Price Sheet</h1>
-          <p className="subtitle">
-            {items.length} rows — stops, comps, and identity per model.{" "}
-            {staleCount} stale (&gt;60d), {gapCount} without a working comp
-            {hasCompOnly && gapCount > 0 ? " (hidden)" : ""}.
-          </p>
-        </div>
-      </header>
-
       {error ? (
         <p className="error">Could not load the price sheet: {error}</p>
       ) : (
@@ -364,6 +418,7 @@ export default function ReferenceView({
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
                         <td colSpan={5}>
+                          <RefDevices devices={devicesByRef.get(it.id) ?? []} />
                           {it.revisions.length > 0 && <RevisionChips revisions={it.revisions} />}
                           {it.variants.length > 0 && <VariantChips variants={it.variants} />}
                           {it.issues.length > 0 && <IssueTable issues={it.issues} />}
