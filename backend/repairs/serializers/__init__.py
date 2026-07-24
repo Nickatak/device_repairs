@@ -1,8 +1,8 @@
 """API serializers.
 
 Inventory list/create + device detail (with nested repairs and steps) on the read
-side; device and step write paths for the create/edit modals. Heavier write paths
-(measurements, parts, media) stay in the Django admin for now.
+side; device and step write paths for the create/edit modals. Media uploads land
+via the API since 2026-07-24 (GPS-stripped, EXIF taken_at); Parts stay admin-side.
 
 Split by domain (2026-07-22), mirroring models/: purchases, reference, inventory,
 repairlog. This barrel keeps `from repairs.serializers import X` working.
@@ -42,6 +42,8 @@ from .repairlog import (
     PHASE_FIELDS,
     MeasurementSerializer,
     MeasurementWriteSerializer,
+    MediaSerializer,
+    MediaWriteSerializer,
     NoteSerializer,
     NoteWriteSerializer,
     RepairCreateSerializer,
@@ -65,6 +67,8 @@ __all__ = [
     "LaneSerializer",
     "MeasurementSerializer",
     "MeasurementWriteSerializer",
+    "MediaSerializer",
+    "MediaWriteSerializer",
     "NoteSerializer",
     "NoteWriteSerializer",
     "PurchaseDetailSerializer",

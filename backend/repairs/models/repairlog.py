@@ -198,6 +198,15 @@ class Media(models.Model):
 
     image = models.ImageField(upload_to="repair_media/")
     caption = models.CharField(max_length=255, blank=True)
+    taken_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Shutter moment from EXIF DateTimeOriginal, stored UTC (bench-local "
+            "assumed when the camera wrote no offset). Null = no EXIF timestamp."
+        ),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
     repair = models.ForeignKey(
         Repair, null=True, blank=True, on_delete=models.CASCADE, related_name="media"
     )

@@ -268,3 +268,34 @@ export async function updateMeasurement(
     `/devices/${deviceId}`,
   );
 }
+
+// Photo upload: forwards the browser's files to the backend as one multipart
+// POST per file (Media = one image per row). GPS-strip + EXIF taken_at happen
+// backend-side. `formData` carries `files` entries from the note's file input.
+export async function uploadNoteMedia(
+  deviceId: number,
+  noteId: number,
+  formData: FormData,
+): Promise<WriteResult> {
+  const files = formData.getAll("files") as File[];
+  if (files.length === 0) return { ok: false, error: "No files selected." };
+
+  for (const file of files) {
+    const body = new FormData();
+    body.append("note", String(noteId));
+    body.append("image", file);
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/media/`, { method: "POST", body });
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      return { ok: false, error: `${file.name}: ${res.status}: ${text.slice(0, 300)}` };
+    }
+  }
+
+  revalidatePath(`/devices/${deviceId}`);
+  return { ok: true };
+}

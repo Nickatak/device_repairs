@@ -1,8 +1,10 @@
-"""Bench-work payloads — repairs (phase track), notes, measurements."""
+"""Bench-work payloads — repairs (phase track), notes, measurements, media."""
 
+from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from repairs.models import Measurement, Note, Repair
+from repairs.exif import extract_taken_at, strip_gps
+from repairs.models import Measurement, Media, Note, Repair
 
 COMPLETED_REPAIR_ERROR = "Repair is completed — un-mark completion to edit it."
 
@@ -18,10 +20,25 @@ class MeasurementSerializer(serializers.ModelSerializer):
         fields = ["id", "what", "value", "comment"]
 
 
+class MediaSerializer(serializers.ModelSerializer):
+    """Read shape. `image` is the relative /media/ URL — the browser reaches it
+    through the frontend's same-origin proxy, so no absolute backend host here."""
+
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Media
+        fields = ["id", "image", "caption", "note", "repair", "taken_at", "created_at"]
+
+    def get_image(self, obj):
+        return obj.image.url
+
+
 class NoteSerializer(serializers.ModelSerializer):
     """A note with its measurements and sub-notes (one level — the domain's max depth)."""
 
     measurements = MeasurementSerializer(many=True, read_only=True)
+    media = MediaSerializer(many=True, read_only=True)
     subnotes = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,6 +51,7 @@ class NoteSerializer(serializers.ModelSerializer):
             "comment",
             "parent",
             "measurements",
+            "media",
             "subnotes",
         ]
 
@@ -60,10 +78,11 @@ class RepairWithNotesSerializer(serializers.ModelSerializer):
 
     current_phase = serializers.CharField(read_only=True)
     notes = serializers.SerializerMethodField()
+    media = MediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Repair
-        fields = ["id", "current_phase", "created_at", "completed_at", "comment", "notes", *PHASE_FIELDS]
+        fields = ["id", "current_phase", "created_at", "completed_at", "comment", "notes", "media", *PHASE_FIELDS]
 
     def get_notes(self, obj):
         top_level = obj.notes.filter(parent__isnull=True)
@@ -120,3 +139,49 @@ class NoteWriteSerializer(serializers.ModelSerializer):
                     "A sub-note must belong to the same repair as its parent."
                 )
         return attrs
+
+
+class MediaWriteSerializer(serializers.ModelSerializer):
+    """Upload / correct a photo. No delete path, same as the rest of the log.
+
+    On create the stored file is the GPS-stripped version of the upload and
+    `taken_at` comes from its EXIF (see repairs.exif). The image itself is
+    immutable after upload — a wrong photo is corrected by re-captioning or
+    reparenting; a better photo is a new row.
+    """
+
+    class Meta:
+        model = Media
+        fields = ["id", "image", "caption", "note", "repair"]
+
+    def validate(self, attrs):
+        if self.instance and "image" in attrs:
+            raise serializers.ValidationError(
+                "The image file is immutable — upload a new photo instead."
+            )
+        note = attrs.get("note") if "note" in attrs else getattr(self.instance, "note", None)
+        repair = attrs.get("repair") if "repair" in attrs else getattr(self.instance, "repair", None)
+        if bool(note) == bool(repair):
+            raise serializers.ValidationError(
+                "Media attaches to exactly one of: a note OR a repair."
+            )
+        owner = repair or note.repair
+        if owner.completed_at:
+            raise serializers.ValidationError(COMPLETED_REPAIR_ERROR)
+        return attrs
+
+    def create(self, validated_data):
+        upload = validated_data["image"]
+        data = upload.read()
+        cleaned = strip_gps(data)
+        validated_data["taken_at"] = extract_taken_at(cleaned)
+        validated_data["image"] = ContentFile(cleaned, name=upload.name)
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        # Same relative-/media/-URL shape as the read serializer — API consumers
+        # see one convention regardless of which payload they're holding.
+        rep = super().to_representation(instance)
+        rep["image"] = instance.image.url
+        rep["taken_at"] = instance.taken_at.isoformat() if instance.taken_at else None
+        return rep

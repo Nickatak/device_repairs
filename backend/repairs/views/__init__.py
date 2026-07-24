@@ -17,6 +17,8 @@ from .reference import LaneListView, ReferenceListView
 from .repairlog import (
     MeasurementCreateView,
     MeasurementUpdateView,
+    MediaCreateView,
+    MediaUpdateView,
     NoteCreateView,
     NoteUpdateView,
     RepairCreateView,
@@ -40,6 +42,8 @@ __all__ = [
     "LaneListView",
     "MeasurementCreateView",
     "MeasurementUpdateView",
+    "MediaCreateView",
+    "MediaUpdateView",
     "NoteCreateView",
     "NoteUpdateView",
     "OptionsView",

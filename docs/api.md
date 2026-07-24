@@ -184,6 +184,34 @@ record.
    `{"status": "in_repair"}` when it hits the bench, `"fixed"` when done —
    repairs never carry status.
 
+## Recipe: photos on a note (or repair)
+
+`POST /media/` — **multipart**, not JSON: `image` (the file) + `caption`
+(optional) + exactly one of `note` / `repair` (id). One photo per row; loop for
+a batch.
+
+```
+curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
+  -F "image=@IMG_1234.jpg"
+```
+
+- Server-side on every upload: **GPS EXIF is stripped** from the stored file
+  (Nick's 2026-07-24 call — bench photos carry home coordinates); device
+  make/model and datetime tags are kept. `taken_at` is extracted from EXIF
+  DateTimeOriginal (UTC; bench-local America/Los_Angeles assumed when the
+  camera wrote no offset) — null means the file had no EXIF timestamp, and
+  `created_at` (upload stamp) is the fallback chronology.
+- Phone→upload handoff must be a raw-file path (direct upload, USB, email
+  attachment). Messenger pipelines re-encode and strip EXIF → every photo
+  lands `taken_at: null`.
+- `PATCH /media/<id>/` corrects `caption` or reparents (`note`/`repair`). The
+  image file itself is immutable — a better photo is a new row. No DELETE,
+  same as the rest of the log.
+- Media rides the device payload: each note (and the repair) carries a `media`
+  array; `image` is a relative `/media/...` URL served through the frontend's
+  same-origin proxy.
+- Completed repairs are frozen — uploads against them 400.
+
 ## Endpoint reference
 
 | Method + path | Purpose |
@@ -201,6 +229,7 @@ record.
 | POST `/repairs/` · PATCH `/repairs/<id>/` | Start repair · phase track/completion |
 | POST `/notes/` · PATCH `/notes/<id>/` | Bench notes (one-level nesting) |
 | POST `/measurements/` · PATCH `/measurements/<id>/` | Readings on a note |
+| POST `/media/` · PATCH `/media/<id>/` | Photo upload (multipart; GPS-stripped, EXIF taken_at) · caption/reparent |
 | GET/POST `/stock/` | Buckets with live counts / mint a SKU |
 | GET/PATCH `/stock/<id>/` | Bucket detail / identity + state edits (never count) |
 | POST `/stock/<id>/recount/` | Physical recount: new base + stamp |

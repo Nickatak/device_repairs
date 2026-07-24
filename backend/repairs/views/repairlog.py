@@ -1,10 +1,12 @@
-"""Bench-work endpoints — repair, note, and measurement create/update. No delete paths by design."""
+"""Bench-work endpoints — repair, note, measurement, and media create/update. No delete paths by design."""
 
 from rest_framework.generics import CreateAPIView, UpdateAPIView
+from rest_framework.parsers import FormParser, MultiPartParser
 
-from repairs.models import Measurement, Note, Repair
+from repairs.models import Measurement, Media, Note, Repair
 from repairs.serializers import (
     MeasurementWriteSerializer,
+    MediaWriteSerializer,
     NoteWriteSerializer,
     RepairCreateSerializer,
     RepairWriteSerializer,
@@ -37,6 +39,22 @@ class NoteUpdateView(UpdateAPIView):
 
     serializer_class = NoteWriteSerializer
     queryset = Note.objects.all()
+
+
+class MediaCreateView(CreateAPIView):
+    """POST a photo (multipart: image + caption + note XOR repair). GPS is
+    stripped and taken_at extracted server-side. No delete path by design."""
+
+    parser_classes = [MultiPartParser, FormParser]
+    serializer_class = MediaWriteSerializer
+    queryset = Media.objects.all()
+
+
+class MediaUpdateView(UpdateAPIView):
+    """PATCH caption / reparent an existing photo. The image file is immutable."""
+
+    serializer_class = MediaWriteSerializer
+    queryset = Media.objects.all()
 
 
 class MeasurementCreateView(CreateAPIView):

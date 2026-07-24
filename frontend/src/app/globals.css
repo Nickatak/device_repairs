@@ -434,6 +434,24 @@ ol.subnotes {
   font-style: italic;
   margin-top: 2px;
 }
+.note-media {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.note-thumb {
+  height: 72px;
+  width: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  display: block;
+}
+.note-media-add {
+  align-self: center;
+}
 .modal label.narrow {
   max-width: 120px;
 }
