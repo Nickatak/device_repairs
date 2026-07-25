@@ -1,4 +1,7 @@
-"""Price-sheet catalog payloads — lanes, references, comp pulls. Read-only API."""
+"""Price-sheet catalog payloads — lanes, references, comp pulls. Read-only,
+except revisions: bench work accretes rev knowledge (ID tells, quirks like the
+JDM-040 no-battery boot loop), so revisions are writable via the API while the
+rest of the catalog still edits through Django admin."""
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -25,6 +28,17 @@ class RevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Revision
         fields = ["id", "name", "note", "position"]
+
+
+class RevisionWriteSerializer(serializers.ModelSerializer):
+    """Create / edit a board revision (no delete). The nested read payload
+    stays `RevisionSerializer`; this adds `reference` so a POST can parent
+    itself. Rev names are unique per reference — the split DS4 refs (30/31/149)
+    duplicate rev sets on purpose, so a cross-ref quirk lands per-ref."""
+
+    class Meta:
+        model = Revision
+        fields = ["id", "reference", "name", "note", "position"]
 
 
 class CompPullSerializer(serializers.ModelSerializer):

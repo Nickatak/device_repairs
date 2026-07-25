@@ -13,7 +13,12 @@ from .exits import ExitCreateView, ExitUpdateView
 from .inventory import DeviceBulkCreateView, DeviceDetailView, InventoryListView
 from .options import OptionsView
 from .purchases import PurchaseArriveView, PurchaseDetailView, PurchaseListCreateView
-from .reference import LaneListView, ReferenceListView
+from .reference import (
+    LaneListView,
+    ReferenceListView,
+    RevisionCreateView,
+    RevisionUpdateView,
+)
 from .repairlog import (
     MeasurementCreateView,
     MeasurementUpdateView,
@@ -51,6 +56,8 @@ __all__ = [
     "PurchaseDetailView",
     "PurchaseListCreateView",
     "ReferenceListView",
+    "RevisionCreateView",
+    "RevisionUpdateView",
     "RepairCreateView",
     "RepairUpdateView",
     "StockDetailView",

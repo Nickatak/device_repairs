@@ -28,6 +28,7 @@ from .reference import (
     IssueSerializer,
     LaneSerializer,
     RevisionSerializer,
+    RevisionWriteSerializer,
     VariantSerializer,
 )
 from .stock import (
@@ -80,6 +81,7 @@ __all__ = [
     "RepairWithNotesSerializer",
     "RepairWriteSerializer",
     "RevisionSerializer",
+    "RevisionWriteSerializer",
     "StockIntakeSerializer",
     "StockIntakeWriteSerializer",
     "StockItemSerializer",

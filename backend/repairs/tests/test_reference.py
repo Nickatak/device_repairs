@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from repairs.models import CompPull, DeviceReference, Issue, Variant
+from repairs.models import CompPull, DeviceReference, Issue, Revision, Variant
 from repairs.serializers import DeviceReferenceSerializer
 
 from .helpers import make_ref
@@ -181,3 +181,73 @@ class CompPullGrainTests(TestCase):
             reference=ref, kind=CompPull.Kind.WORKING, pulled_on=today
         )
         self.assertEqual(list(ref.comp_pulls.all()), [new, old])
+
+
+class RevisionApiTests(TestCase):
+    """Revisions are the one writable catalog layer — bench work accretes rev
+    knowledge (quirks, ID tells), so the API must support create + note edits."""
+
+    def setUp(self):
+        self.ref = make_ref(name="DualShock 4 (v2)")
+
+    def test_create_revision(self):
+        res = self.client.post(
+            "/api/v1/revisions/",
+            {"reference": self.ref.pk, "name": "JDM-040", "note": "v2 (CUH-ZCT2x).", "position": 0},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+        rev = Revision.objects.get(pk=res.json()["id"])
+        self.assertEqual(rev.reference, self.ref)
+        self.assertEqual(rev.name, "JDM-040")
+
+    def test_created_revision_appears_in_reference_payload(self):
+        self.client.post(
+            "/api/v1/revisions/",
+            {"reference": self.ref.pk, "name": "JDM-050"},
+            content_type="application/json",
+        )
+        payload = self.client.get("/api/v1/reference/").json()
+        row = next(r for r in payload if r["id"] == self.ref.pk)
+        self.assertEqual([rev["name"] for rev in row["revisions"]], ["JDM-050"])
+
+    def test_patch_accretes_note(self):
+        rev = Revision.objects.create(
+            reference=self.ref, name="JDM-040", note="v2 (CUH-ZCT2x)."
+        )
+        res = self.client.patch(
+            f"/api/v1/revisions/{rev.pk}/",
+            {"note": "v2 (CUH-ZCT2x). No-battery boot loop on USB bench power."},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 200)
+        rev.refresh_from_db()
+        self.assertIn("boot loop", rev.note)
+        self.assertEqual(rev.name, "JDM-040")  # untouched fields survive a PATCH
+
+    def test_duplicate_name_on_same_reference_rejected_as_400(self):
+        Revision.objects.create(reference=self.ref, name="JDM-040")
+        res = self.client.post(
+            "/api/v1/revisions/",
+            {"reference": self.ref.pk, "name": "JDM-040"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 400)
+
+    def test_same_name_on_split_reference_allowed(self):
+        # The DS4 catalog splits one platform across refs (30/31/149) — rev
+        # sets duplicate across them by design, so uniqueness is per-ref only.
+        other = make_ref(name="DualShock 4 (v1/v2 hall exit class)")
+        Revision.objects.create(reference=self.ref, name="JDM-040")
+        res = self.client.post(
+            "/api/v1/revisions/",
+            {"reference": other.pk, "name": "JDM-040"},
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201)
+
+    def test_delete_not_routed(self):
+        rev = Revision.objects.create(reference=self.ref, name="JDM-040")
+        res = self.client.delete(f"/api/v1/revisions/{rev.pk}/")
+        self.assertEqual(res.status_code, 405)
+        self.assertTrue(Revision.objects.filter(pk=rev.pk).exists())

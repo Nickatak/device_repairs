@@ -136,6 +136,25 @@ recounts override; live `count` is derived server-side) and `presence`
   id arrays and `note`. Don't mint buckets on your own initiative — bucket
   grain and tier are Nick's design calls; ask when a new part class shows up.
 
+## Recipe: board-revision knowledge (rev quirks, ID tells)
+
+Revisions (JDM-040, BDM-020…) live on catalog rows and are the one writable
+catalog layer — the rest of the reference sheet still edits through Django
+admin. When bench work surfaces a rev-level fact (a quirk like the JDM-040
+no-battery boot loop, an ID tell, an open question resolved):
+
+- **Accrete onto an existing rev**: `GET /reference/` → find the rev's `id`
+  under its catalog row → `PATCH /revisions/<id>/` `{"note": "<full updated
+  text>"}`. PATCH replaces the field — send the whole note, existing content
+  plus the new dated line, not just the addition.
+- **New rev crossed the bench**: `POST /revisions/`
+  `{"reference": <catalog row id>, "name": "JDM-060", "note": "…", "position": N}`.
+- The split DS4 refs (30 v1 / 31 v2 / 149 hall-exit-class) duplicate rev sets
+  by design — a quirk belongs on the repair-lane row's rev (30/31); mirror to
+  149 only if it changes exit pricing/handling. No delete endpoint by design.
+- Unit-grain observations ("THIS unit boot-loops") stay bench notes on the
+  repair; only rev-wide knowledge goes here.
+
 ## Recipe: a unit left (sold / gifted / scrapped…)
 
 `POST /exits/`
@@ -237,6 +256,7 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 | POST `/stock/<id>/recount/` | Physical recount: new base + stamp |
 | POST `/stock/intakes/` · PATCH `/stock/intakes/<id>/` | Units entering a bucket from a parts purchase |
 | GET `/reference/` | Full price-sheet catalog (comps, issues, variants, revisions) |
+| POST `/revisions/` · PATCH `/revisions/<id>/` | Board revisions on a catalog row (`reference`, `name`, `note`, `position`) — the one writable catalog layer |
 | GET `/lanes/` | Category lanes |
 | GET `/options/` | Lookup pools: references, sources, people, locations, statuses, recent purchases |
 | GET `/cash/` | `money_out` / `money_in` / `net` + counts |
