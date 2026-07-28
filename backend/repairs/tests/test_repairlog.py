@@ -12,8 +12,9 @@ class PhaseTrackTests(TestCase):
     def setUp(self):
         self.repair = Repair.objects.create(device=Device.objects.create())
 
-    def test_fresh_repair_starts_at_teardown(self):
-        self.assertEqual(self.repair.current_phase, "teardown")
+    def test_fresh_repair_starts_at_intake(self):
+        # Intake = the as-received function test, before the shell opens.
+        self.assertEqual(self.repair.current_phase, "intake")
 
     def test_advances_past_completed_phases(self):
         self.repair.teardown_done_at = timezone.now()

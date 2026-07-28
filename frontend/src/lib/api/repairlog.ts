@@ -36,6 +36,7 @@ export interface Note {
 
 // Mirrors Repair.PHASES on the backend — the fixed bench pipeline.
 export const REPAIR_PHASES = [
+  { key: "intake", label: "Intake" },
   { key: "teardown", label: "Teardown" },
   { key: "wash", label: "Wash" },
   { key: "repair", label: "Repair" },

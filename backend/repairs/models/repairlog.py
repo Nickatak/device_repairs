@@ -10,7 +10,10 @@ class Repair(models.Model):
     """One diagnose-and-fix engagement on one Device. Aggregate root of the log.
 
     Bench work moves through a FIXED phase track (2026-07-21 redesign):
-    Teardown → Wash → Repair → Re-assemble → Verify. Each phase is a done-timestamp +
+    Intake → Teardown → Wash → Repair → Re-assemble → Verify (Intake added
+    2026-07-28: the as-received function test BEFORE the shell opens — the
+    controller-lane intake-test-before-teardown doctrine as a checklist step).
+    Each phase is a done-timestamp +
     optional deviation note; phases are skippable (a diagnosis-only job never washes).
     Freeform Notes + Measurements are the *contents of the Repair phase* — the one
     phase that's genuinely variable. Per-screw granularity belongs to the (parked)
@@ -28,6 +31,7 @@ class Repair(models.Model):
     """
 
     PHASES = [
+        ("intake", "Intake"),
         ("teardown", "Teardown"),
         ("wash", "Wash"),
         ("repair", "Repair"),
@@ -47,6 +51,11 @@ class Repair(models.Model):
         ),
     )
 
+    intake_done_at = models.DateTimeField(null=True, blank=True)
+    intake_note = models.TextField(
+        blank=True,
+        help_text="As-received test results — what the unit did before the shell opened.",
+    )
     teardown_done_at = models.DateTimeField(null=True, blank=True)
     teardown_note = models.TextField(blank=True, help_text="Deviations only — the routine is not logged.")
     wash_done_at = models.DateTimeField(null=True, blank=True)
