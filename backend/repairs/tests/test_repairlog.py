@@ -18,14 +18,14 @@ class PhaseTrackTests(TestCase):
 
     def test_advances_past_completed_phases(self):
         self.repair.teardown_done_at = timezone.now()
-        self.repair.wash_done_at = timezone.now()
+        self.repair.diagnostics_done_at = timezone.now()
         self.assertEqual(self.repair.current_phase, "repair")
 
     def test_skipped_phase_does_not_stall_the_track(self):
-        # Teardown done, wash skipped, repair done → bench is at re-assemble.
+        # Teardown done, diagnostics skipped, repair done → bench is at wash.
         self.repair.teardown_done_at = timezone.now()
         self.repair.repair_done_at = timezone.now()
-        self.assertEqual(self.repair.current_phase, "reassemble")
+        self.assertEqual(self.repair.current_phase, "wash")
 
     def test_all_phases_done_is_completion_pending_not_complete(self):
         # Completion is MANUAL — checking every phase still leaves the mark to make.
@@ -82,7 +82,7 @@ class PhaseTrackTests(TestCase):
         self.assertEqual(res.status_code, 200)
         payload = res.json()["repairs"][0]
         self.assertIsNotNone(payload["teardown_done_at"])
-        self.assertEqual(payload["current_phase"], "wash")
+        self.assertEqual(payload["current_phase"], "diagnostics")
 
 
 class CompletedRepairFreezeTests(TestCase):

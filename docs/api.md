@@ -303,6 +303,8 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
   the two automatic flips (arrive, exit).
 - **Purchase.kind**: `device`, `parts`.
 - **Exit.kind**: `sold`, `gifted`, `parted`, `scrapped`, `returned`, `lost`.
-- **Repair phases** (in order): `intake` (as-received function test, before
-  the shell opens — added 2026-07-28), `teardown`, `wash`, `repair`,
-  `reassemble`, `verify`. Each has `_done_at` + `_note` columns on the repair.
+- **Repair phases** (in order, reworked 2026-07-28): `intake` (as-received
+  function test, before the shell opens), `teardown`, `diagnostics` (fault
+  isolation on the open unit), `repair`, `wash` (post-solder cleanup — after
+  repair, before the shell closes), `reassemble`, `verify`. Each has
+  `_done_at` + `_note` columns on the repair.

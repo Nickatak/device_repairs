@@ -38,8 +38,9 @@ export interface Note {
 export const REPAIR_PHASES = [
   { key: "intake", label: "Intake" },
   { key: "teardown", label: "Teardown" },
-  { key: "wash", label: "Wash" },
+  { key: "diagnostics", label: "Diagnostics" },
   { key: "repair", label: "Repair" },
+  { key: "wash", label: "Wash" },
   { key: "reassemble", label: "Re-assemble" },
   { key: "verify", label: "Verify" },
 ] as const;

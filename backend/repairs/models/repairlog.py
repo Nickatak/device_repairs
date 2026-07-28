@@ -9,11 +9,13 @@ from .inventory import Device, DeviceNote
 class Repair(models.Model):
     """One diagnose-and-fix engagement on one Device. Aggregate root of the log.
 
-    Bench work moves through a FIXED phase track (2026-07-21 redesign):
-    Intake → Teardown → Wash → Repair → Re-assemble → Verify (Intake added
-    2026-07-28: the as-received function test BEFORE the shell opens — the
-    controller-lane intake-test-before-teardown doctrine as a checklist step).
-    Each phase is a done-timestamp +
+    Bench work moves through a FIXED phase track (2026-07-21 redesign; 2026-07-28
+    rework against the 162 reference flow): Intake → Teardown → Diagnostics →
+    Repair → Wash → Re-assemble → Verify. Intake = the as-received function test
+    before the shell opens (intake-test-before-teardown doctrine); Diagnostics =
+    fault isolation on the open unit; Wash sits AFTER Repair — it's the
+    post-solder flux/grime cleanup before the shell closes. Each phase is a
+    done-timestamp +
     optional deviation note; phases are skippable (a diagnosis-only job never washes).
     Freeform Notes + Measurements are the *contents of the Repair phase* — the one
     phase that's genuinely variable. Per-screw granularity belongs to the (parked)
@@ -33,8 +35,9 @@ class Repair(models.Model):
     PHASES = [
         ("intake", "Intake"),
         ("teardown", "Teardown"),
-        ("wash", "Wash"),
+        ("diagnostics", "Diagnostics"),
         ("repair", "Repair"),
+        ("wash", "Wash"),
         ("reassemble", "Re-assemble"),
         ("verify", "Verify"),
     ]
@@ -58,6 +61,11 @@ class Repair(models.Model):
     )
     teardown_done_at = models.DateTimeField(null=True, blank=True)
     teardown_note = models.TextField(blank=True, help_text="Deviations only — the routine is not logged.")
+    diagnostics_done_at = models.DateTimeField(null=True, blank=True)
+    diagnostics_note = models.TextField(
+        blank=True,
+        help_text="Fault-isolation conclusion; the detail lives in Notes/Measurements.",
+    )
     wash_done_at = models.DateTimeField(null=True, blank=True)
     wash_note = models.TextField(blank=True)
     repair_done_at = models.DateTimeField(null=True, blank=True)
