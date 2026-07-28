@@ -127,6 +127,15 @@ export default function PhaseTrack({
                   {formatDateTime(latest.updated_at)}
                 </span>
               )}
+              {!completed && (
+                <button
+                  className="phase-add-note"
+                  title={`Add a ${label} note`}
+                  onClick={() => onAddNote(key)}
+                >
+                  + Add note
+                </button>
+              )}
             </div>
             {open && (
               <div className="phase-body">
@@ -144,13 +153,6 @@ export default function PhaseTrack({
                       />
                     ))}
                   </ol>
-                )}
-                {!completed && (
-                  <div className="add-note-row">
-                    <button className="btn-edit" onClick={() => onAddNote(key)}>
-                      + Add note
-                    </button>
-                  </div>
                 )}
               </div>
             )}

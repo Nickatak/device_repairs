@@ -948,6 +948,24 @@ ol.subnotes {
   flex: 0 0 150px;
   font-variant-numeric: tabular-nums;
 }
+/* The add-note affordance sits where the old deviation "+ note" chip lived:
+   far right of the phase row, dashed = control, not content. */
+button.phase-add-note {
+  margin-left: auto;
+  flex: 0 0 auto;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 3px 9px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+button.phase-add-note:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
 /* Per-phase accordion (2026-07-28): the whole row toggles its notes. */
 .phase-row.clickable {
   cursor: pointer;
