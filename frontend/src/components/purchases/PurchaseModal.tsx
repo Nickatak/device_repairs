@@ -7,6 +7,7 @@ import type { Options } from "@/lib/api/options";
 import type { Purchase } from "@/lib/api/purchases";
 import Modal from "@/components/ui/Modal";
 import { TextCombobox } from "@/components/ui/Combobox";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // Record a buy event as it happens: "ebay order 111-1231312, $55.42, 2x DS4".
 // Device rows link to it afterward via the device form's purchase combobox.
@@ -94,7 +95,7 @@ export default function PurchaseModal({
   return (
     <Modal onClose={onClose}>
       <h2>{item ? "Edit purchase" : "Add purchase"}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <div className="row">
           <label>
             Kind

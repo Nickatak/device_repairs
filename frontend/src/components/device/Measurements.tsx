@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createMeasurement, updateMeasurement } from "@/app/actions";
 import type { Measurement, Note } from "@/lib/api/repairlog";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // Quick bench annotations on a step: "5V rail: 4.98 V". Click one to edit;
 // "+ measurement" opens the same tiny inline form for a new one.
@@ -65,7 +66,7 @@ export default function Measurements({
         ),
       )}
       {editor ? (
-        <form className="measurement-edit" onSubmit={onSubmit}>
+        <form onKeyDown={formEnterGuard} className="measurement-edit" onSubmit={onSubmit}>
           <input
             placeholder="what — 5V rail"
             value={editor.what}

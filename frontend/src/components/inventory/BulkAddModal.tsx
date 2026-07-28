@@ -9,6 +9,7 @@ import { purchaseLabel } from "@/lib/purchase-format";
 import Modal from "@/components/ui/Modal";
 import { CREATE_STATUSES, ReferenceCombobox } from "./DeviceForm";
 import { TextCombobox } from "@/components/ui/Combobox";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 type LineState = { reference: number | null; quantity: string };
 
@@ -76,7 +77,7 @@ export default function BulkAddModal({
   return (
     <Modal onClose={onClose}>
       <h2>Add devices — {purchaseLabel(purchase)}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         {lines.map((line, i) => (
           <div className="row" key={i}>
             <label>

@@ -7,6 +7,7 @@ import { EXIT_KINDS, type Exit } from "@/lib/api/exits";
 import type { Options } from "@/lib/api/options";
 import Modal from "@/components/ui/Modal";
 import { TextCombobox } from "@/components/ui/Combobox";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // Record or correct a departure event. Creating one flips the device to
 // exited on the backend (ledger rule: a unit exit = status flip + exit row).
@@ -62,7 +63,7 @@ export default function ExitModal({
   return (
     <Modal onClose={onClose}>
       <h2>{item ? "Edit exit" : "Record exit"}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <div className="row">
           <label>
             Kind

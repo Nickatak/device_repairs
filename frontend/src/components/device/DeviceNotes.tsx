@@ -11,6 +11,7 @@ import type { DeviceNote } from "@/lib/api/inventory";
 import type { MediaItem } from "@/lib/api/repairlog";
 import { formatDateTime } from "@/lib/format";
 import Modal from "@/components/ui/Modal";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 type ModalState =
   | { mode: "create"; nextPosition: number }
@@ -70,7 +71,7 @@ function DeviceNoteModal({
   return (
     <Modal onClose={onClose}>
       <h2>{isEdit ? "Edit unit note" : "Add unit note"}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <div className="row">
           <label>
             Title

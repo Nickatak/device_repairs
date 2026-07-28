@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createNote, updateNote } from "@/app/actions";
 import type { Note } from "@/lib/api/repairlog";
 import Modal from "@/components/ui/Modal";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 export type NoteModalState =
   | { mode: "create"; repairId: number; nextPosition: number }
@@ -70,7 +71,7 @@ export default function NoteModal({
   return (
     <Modal onClose={onClose}>
       <h2>{isEdit ? "Edit note" : "Add note"}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
           <div className="row">
             <label>
               Title

@@ -85,6 +85,16 @@ export default function PhaseTrack({
                   rows={2}
                   autoFocus
                   onChange={(e) => setNoteEditor({ key, text: e.target.value })}
+                  // Not a <form>, so the global chord is wired by hand:
+                  // Ctrl/Cmd+Enter saves, Escape cancels, plain Enter = newline.
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      save({ [`${key}_note`]: noteEditor.text }, () => setNoteEditor(null));
+                    } else if (e.key === "Escape") {
+                      setNoteEditor(null);
+                    }
+                  }}
                 />
                 <button
                   className="btn-edit"

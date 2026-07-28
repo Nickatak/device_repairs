@@ -80,7 +80,8 @@ export function Combobox<T extends { id: number }>({
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             setActive((a) => Math.max(a - 1, 0));
-          } else if (e.key === "Enter") {
+          } else if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+            // Modified Enter is the global save chord — let it bubble to the form.
             e.preventDefault();
             if (matches[active]) pick(matches[active]);
           } else if (e.key === "Escape") {
@@ -158,7 +159,8 @@ export function TextCombobox({
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             setActive((a) => Math.max(a - 1, 0));
-          } else if (e.key === "Enter" && matches.length > 0) {
+          } else if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && matches.length > 0) {
+            // Modified Enter is the global save chord — let it bubble to the form.
             e.preventDefault();
             if (matches[active]) pick(matches[active]);
           } else if (e.key === "Escape") {

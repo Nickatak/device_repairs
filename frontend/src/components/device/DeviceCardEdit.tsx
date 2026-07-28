@@ -6,6 +6,7 @@ import { updateDevice } from "@/app/actions";
 import type { DeviceDetail as DeviceDetailT, InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
 import { DeviceFields, useDeviceForm } from "@/components/inventory/DeviceForm";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // The form speaks InventoryItem; the detail payload carries the same device fields.
 function asInventoryItem(device: DeviceDetailT): InventoryItem {
@@ -60,7 +61,7 @@ export default function DeviceCardEdit({
 
   return (
     <section className="device-card">
-      <form onSubmit={onSubmit} className="card-edit">
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit} className="card-edit">
         <DeviceFields
           form={form}
           set={set}

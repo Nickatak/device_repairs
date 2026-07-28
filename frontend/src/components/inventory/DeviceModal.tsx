@@ -7,6 +7,7 @@ import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
 import Modal from "@/components/ui/Modal";
 import { DeviceFields, useDeviceForm } from "./DeviceForm";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // item === null => create mode; item set => edit mode.
 export default function DeviceModal({
@@ -46,7 +47,7 @@ export default function DeviceModal({
   return (
     <Modal onClose={onClose}>
       <h2>{title}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <DeviceFields
           form={form}
           set={set}

@@ -15,6 +15,7 @@ import { STOCK_STATES, type FitsLink, type StockItem } from "@/lib/api/stock";
 import { purchaseLabel } from "@/lib/purchase-format";
 import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 import Modal from "@/components/ui/Modal";
+import { formEnterGuard } from "@/components/ui/formKeys";
 
 // Flattened revision option across the whole catalog — the fits picker needs
 // "JDM-055 (Sony DualShock 4 (v2))" because rev names repeat across refs.
@@ -126,7 +127,7 @@ export function StockModal({
   return (
     <Modal onClose={onClose}>
       <h2>{item ? "Edit bucket" : "New stock bucket"}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <label>
           Name (the minted SKU — at consumption grain)
           <input
@@ -262,7 +263,7 @@ export function IntakeModal({
   return (
     <Modal onClose={onClose}>
       <h2>Intake — {item.name}</h2>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <label>
           From parts purchase
           <Combobox
@@ -337,7 +338,7 @@ export function RecountModal({
         The physical count on the shelf right now. Overrides the running number;
         intakes and draws move from this new base.
       </p>
-      <form onSubmit={onSubmit}>
+      <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <label className="narrow">
           Counted
           <input
