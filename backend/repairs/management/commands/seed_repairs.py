@@ -62,11 +62,22 @@ class Command(BaseCommand):
             for key in PHASE_KEYS:
                 phase = spec.get("phases", {}).get(key)
                 setattr(repair, f"{key}_done_at", midday(phase[0]) if phase else None)
-                setattr(repair, f"{key}_note", phase[1] if phase else "")
             repair.completed_at = (
                 midday(spec["completed"]) if spec.get("completed") else None
             )
             repair.save()
+
+            # Phase note-text from the spec lands as a step Note on that phase
+            # (the deviation columns retired 2026-07-28). Position 100+index =
+            # deterministic, clear of the spec's own note positions, idempotent.
+            for i, key in enumerate(PHASE_KEYS):
+                phase = spec.get("phases", {}).get(key)
+                if phase and len(phase) > 1 and phase[1]:
+                    repair.notes.update_or_create(
+                        phase=key,
+                        position=100 + i,
+                        defaults={"title": "", "text": phase[1]},
+                    )
 
             for note_spec in spec["notes"]:
                 note, _ = repair.notes.update_or_create(

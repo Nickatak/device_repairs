@@ -233,7 +233,8 @@ record.
    (the bucket for readings tied to no specific notation).
 2. Phase track: `PATCH /repairs/<id>/` with any of
    `{intake,teardown,diagnostics,repair,wash,reassemble,verify}_done_at`
-   (datetime) and `..._note` (deviations only — the routine isn't logged).
+   (datetime). The old per-phase `..._note` text columns are GONE
+   (2026-07-28) — phase prose is a step Note on that phase.
 3. Notes are PER-PHASE (2026-07-28): `POST /notes/` `{"repair": 7,
    "phase": "diagnostics", "position": 1, "title": "...", "text": "..."}` —
    `phase` is REQUIRED on create; sub-notes via `parent` (one level deep max,
@@ -327,5 +328,5 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 - **Repair phases** (in order, reworked 2026-07-28): `intake` (as-received
   function test, before the shell opens), `teardown`, `diagnostics` (fault
   isolation on the open unit), `repair`, `wash` (post-solder cleanup — after
-  repair, before the shell closes), `reassemble`, `verify`. Each has
-  `_done_at` + `_note` columns on the repair.
+  repair, before the shell closes), `reassemble`, `verify`. Each has a
+  `_done_at` column on the repair; prose goes in per-phase step Notes.

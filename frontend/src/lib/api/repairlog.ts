@@ -75,10 +75,9 @@ export const REPAIR_PHASES = [
 
 export type PhaseKey = (typeof REPAIR_PHASES)[number]["key"];
 
+// Done-stamps only — phase prose lives in per-phase step Notes (2026-07-28).
 export type PhaseFields = {
   [K in PhaseKey as `${K}_done_at`]: string | null;
-} & {
-  [K in PhaseKey as `${K}_note`]: string;
 };
 
 export interface RepairWithNotes extends PhaseFields {

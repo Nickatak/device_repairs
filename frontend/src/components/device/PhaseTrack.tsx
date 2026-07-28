@@ -29,9 +29,6 @@ export default function PhaseTrack({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [noteEditor, setNoteEditor] = useState<{ key: PhaseKey; text: string } | null>(
-    null,
-  );
   // Volume grows fast (imagine every Xbox rail measurement) — phases start
   // collapsed except wherever the bench currently stands.
   const [expanded, setExpanded] = useState<Set<PhaseKey>>(() => {
@@ -71,9 +68,7 @@ export default function PhaseTrack({
     <div className="phase-track">
       {REPAIR_PHASES.map(({ key, label }) => {
         const doneAt = repair[`${key}_done_at`];
-        const note = repair[`${key}_note`];
         const isCurrent = repair.current_phase === key;
-        const editing = noteEditor?.key === key;
         // On a completed repair, an unchecked phase demonstrably did NOT happen.
         const skipped = completed && !doneAt;
         const phaseNotes = repair.notes.filter((n) => n.phase === key);
@@ -131,48 +126,6 @@ export default function PhaseTrack({
                   {latest.title || latest.text.slice(0, 40) || "untitled"} ·{" "}
                   {formatDateTime(latest.updated_at)}
                 </span>
-              )}
-              {editing ? (
-                <span className="phase-note-edit">
-                  <textarea
-                    value={noteEditor.text}
-                    rows={2}
-                    autoFocus
-                    onChange={(e) => setNoteEditor({ key, text: e.target.value })}
-                    // Not a <form>, so the global chord is wired by hand:
-                    // Ctrl/Cmd+Enter saves, Escape cancels, plain Enter = newline.
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                        e.preventDefault();
-                        save({ [`${key}_note`]: noteEditor.text }, () => setNoteEditor(null));
-                      } else if (e.key === "Escape") {
-                        setNoteEditor(null);
-                      }
-                    }}
-                  />
-                  <button
-                    className="btn-edit"
-                    disabled={pending}
-                    onClick={() =>
-                      save({ [`${key}_note`]: noteEditor.text }, () => setNoteEditor(null))
-                    }
-                  >
-                    Save
-                  </button>
-                  <button className="btn-edit" onClick={() => setNoteEditor(null)}>
-                    Cancel
-                  </button>
-                </span>
-              ) : completed ? (
-                <span className="phase-note frozen">{note}</span>
-              ) : (
-                <button
-                  className={note ? "phase-note" : "phase-note add"}
-                  onClick={() => setNoteEditor({ key, text: note })}
-                  title="Edit phase note"
-                >
-                  {note || "+ note"}
-                </button>
               )}
             </div>
             {open && (

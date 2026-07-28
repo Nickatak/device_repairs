@@ -16,10 +16,9 @@ from repairs.models import (
 
 COMPLETED_REPAIR_ERROR = "Repair is completed — un-mark completion to edit it."
 
-# The 10 phase columns, derived from Repair.PHASES so the two can't drift.
-PHASE_FIELDS = [
-    f"{key}_{suffix}" for key, _ in Repair.PHASES for suffix in ("done_at", "note")
-]
+# The phase done-stamp columns, derived from Repair.PHASES so the two can't
+# drift. (The per-phase deviation text columns folded into step notes 2026-07-28.)
+PHASE_FIELDS = [f"{key}_done_at" for key, _ in Repair.PHASES]
 
 
 class MeasurementSerializer(serializers.ModelSerializer):

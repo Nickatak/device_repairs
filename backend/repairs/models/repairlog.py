@@ -20,12 +20,12 @@ class Repair(models.Model):
     before the shell opens (intake-test-before-teardown doctrine); Diagnostics =
     fault isolation on the open unit; Wash sits AFTER Repair — it's the
     post-solder flux/grime cleanup before the shell closes. Each phase is a
-    done-timestamp +
-    optional deviation note; phases are skippable (a diagnosis-only job never washes).
-    Freeform Notes + Measurements are the *contents of the Repair phase* — the one
-    phase that's genuinely variable. Per-screw granularity belongs to the (parked)
-    per-model teardown guide, not the log. The track ends at Verify: outflow states
-    (listed / sold / shipped) are Device-lifecycle facts, not repair phases.
+    done-timestamp; phases are skippable (a diagnosis-only job never washes).
+    All prose lives in per-phase Notes (the old per-phase deviation text
+    columns folded into step notes 2026-07-28). Per-screw granularity belongs
+    to the (parked) per-model teardown guide, not the log. The track ends at
+    Verify: outflow states (listed / sold / shipped) are Device-lifecycle
+    facts, not repair phases.
 
     No status field (removed 2026-07-21): the phase track IS the repair's state;
     the lifecycle lives on Device. A Repair exists only when bench work starts —
@@ -60,25 +60,12 @@ class Repair(models.Model):
     )
 
     intake_done_at = models.DateTimeField(null=True, blank=True)
-    intake_note = models.TextField(
-        blank=True,
-        help_text="As-received test results — what the unit did before the shell opened.",
-    )
     teardown_done_at = models.DateTimeField(null=True, blank=True)
-    teardown_note = models.TextField(blank=True, help_text="Deviations only — the routine is not logged.")
     diagnostics_done_at = models.DateTimeField(null=True, blank=True)
-    diagnostics_note = models.TextField(
-        blank=True,
-        help_text="Fault-isolation conclusion; the detail lives in Notes/Measurements.",
-    )
     wash_done_at = models.DateTimeField(null=True, blank=True)
-    wash_note = models.TextField(blank=True)
     repair_done_at = models.DateTimeField(null=True, blank=True)
-    repair_note = models.TextField(blank=True, help_text="Summary only — the detail lives in Steps.")
     reassemble_done_at = models.DateTimeField(null=True, blank=True)
-    reassemble_note = models.TextField(blank=True)
     verify_done_at = models.DateTimeField(null=True, blank=True)
-    verify_note = models.TextField(blank=True, help_text="Function-validation evidence (tests run, results).")
 
     class Meta:
         ordering = ["-created_at"]

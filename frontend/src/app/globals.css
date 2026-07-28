@@ -948,29 +948,6 @@ ol.subnotes {
   flex: 0 0 150px;
   font-variant-numeric: tabular-nums;
 }
-.phase-note {
-  color: var(--muted);
-  font-size: 12.5px;
-  text-align: left;
-  padding: 2px 0;
-  flex: 0 1 auto;
-  line-height: 1.4;
-  font-family: inherit;
-}
-/* Clickable = boxed (site policy): the editable note is a chip like a
-   measurement; the frozen span below stays plain text. */
-button.phase-note {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 9px;
-  cursor: pointer;
-}
-/* The empty "+ note" affordance hugs the right edge so it reads as a control,
-   not note content; a phase WITH a note keeps its chip inline after the date. */
-button.phase-note.add {
-  margin-left: auto;
-}
 /* Per-phase accordion (2026-07-28): the whole row toggles its notes. */
 .phase-row.clickable {
   cursor: pointer;
@@ -1070,29 +1047,6 @@ button.phase-note.add {
 .meta-menu-item:hover {
   background: var(--border);
 }
-button.phase-note:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-button.phase-note.add {
-  border-style: dashed;
-}
-.phase-note-edit {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  flex: 1;
-}
-.phase-note-edit textarea {
-  flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: inherit;
-  font-size: 12.5px;
-  padding: 6px 8px;
-}
 
 /* Step measurements */
 .measurements {
@@ -1190,10 +1144,6 @@ button.phase-note.add {
   color: #ff90ac;
   font-style: italic;
   flex-basis: auto;
-}
-
-.phase-note.frozen {
-  cursor: default;
 }
 
 .measurement.frozen {

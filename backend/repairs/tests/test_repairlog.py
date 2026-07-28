@@ -62,13 +62,12 @@ class PhaseTrackTests(TestCase):
         stamp = timezone.now().isoformat()
 
         res = self.client.patch(
-            url, {"wash_done_at": stamp, "wash_note": "smoker unit — double dunk"},
+            url, {"wash_done_at": stamp},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 200)
         self.repair.refresh_from_db()
         self.assertIsNotNone(self.repair.wash_done_at)
-        self.assertEqual(self.repair.wash_note, "smoker unit — double dunk")
 
         res = self.client.patch(url, {"wash_done_at": None}, content_type="application/json")
         self.assertEqual(res.status_code, 200)
