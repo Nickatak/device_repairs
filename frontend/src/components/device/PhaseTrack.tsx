@@ -81,7 +81,16 @@ export default function PhaseTrack({
         return (
           <div key={key} className={`phase-section${open ? " open" : ""}`}>
             <div
-              className={`phase-row${doneAt ? " done" : ""}${skipped ? " skipped" : ""}`}
+              className={`phase-row clickable${doneAt ? " done" : ""}${skipped ? " skipped" : ""}`}
+              // The whole row is the accordion toggle; clicks on interactive
+              // children (check, note chip, editor fields) don't bubble into it.
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("button, textarea, input, a")) {
+                  return;
+                }
+                toggleExpanded(key);
+              }}
+              title={open ? "Collapse notes" : "Expand notes"}
             >
               <button
                 className={`phase-check${isCurrent ? " current" : ""}`}
@@ -102,6 +111,11 @@ export default function PhaseTrack({
                 {doneAt ? "✓" : skipped ? "✕" : ""}
               </button>
               <span className="phase-label">{label}</span>
+              {phaseNotes.length > 0 && (
+                <span className="note-count" title={`${phaseNotes.length} notes`}>
+                  {phaseNotes.length}
+                </span>
+              )}
               <span className="phase-date">
                 {doneAt ? formatDateTime(doneAt) : skipped ? "not performed" : ""}
               </span>
@@ -147,13 +161,6 @@ export default function PhaseTrack({
                   {note || "+ note"}
                 </button>
               )}
-              <button
-                className={`phase-expand${phaseNotes.length > 0 ? " has-notes" : ""}`}
-                onClick={() => toggleExpanded(key)}
-                title={open ? "Collapse notes" : "Expand notes"}
-              >
-                {open ? "▾" : "▸"} {phaseNotes.length}
-              </button>
             </div>
             {open && (
               <div className="phase-body">
