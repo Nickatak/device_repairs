@@ -251,7 +251,7 @@ record.
 6. Device lifecycle is separate: `PATCH /inventory/<id>/` with the bench-split
    statuses — `disassembled_diagnosing` when it's opened on the desk (then
    `_parts` / `_solder` as the diagnosis lands), `reassembled_untested` when
-   the shell closes, `reassembled_tested` when function-tested — repairs never
+   the shell closes, `awaiting_exit` when bench work is over — repairs never
    carry status.
 
 ## Recipe: photos on a note (or repair)
@@ -316,7 +316,9 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 
 - **Device.status** (bench split 2026-07-24): `shipped` (inbound) → `acquired` →
   the **Disassembled family** `disassembled_diagnosing` / `disassembled_parts` /
-  `disassembled_solder` → `reassembled_untested` → `reassembled_tested` →
+  `disassembled_solder` → `reassembled_untested` → `awaiting_exit` (renamed
+  from `reassembled_tested` 2026-07-28 — a pipeline position, NOT a quality
+  claim: a unit awaiting a scrap exit sits here too) →
   `exited`. Disassembled = physically open on Nick's desk; the sub-state names
   what the unit is WAITING FOR (diagnosis / parts to go in / solder work), not
   whether it's blocked. Re-assembled = shell closed; `tested` is the old

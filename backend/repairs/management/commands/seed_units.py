@@ -37,7 +37,7 @@ STATUS_MAP = {
     # generic member of each family (this command is a historical import).
     "in-repair": "disassembled_diagnosing",
     "diagnosed": "acquired",
-    "listed": "reassembled_tested",
+    "listed": "awaiting_exit",
     **{s: "exited" for s in EXIT_STATUSES},
 }
 

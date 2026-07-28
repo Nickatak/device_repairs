@@ -104,7 +104,7 @@ class TouchedAtTests(TestCase):
     def test_arrival_flip_bumps_shipped_units_only(self):
         purchase = Purchase.objects.create(total_price=Decimal("10.00"))
         shipped = Device.objects.create(purchase=purchase, status="shipped")
-        acquired = Device.objects.create(purchase=purchase, status="reassembled_tested")
+        acquired = Device.objects.create(purchase=purchase, status="awaiting_exit")
         self.reset(shipped)
         self.reset(acquired)
         res = self.client.post(f"/api/v1/purchases/{purchase.pk}/arrive/", {})

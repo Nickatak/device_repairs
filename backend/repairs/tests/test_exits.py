@@ -11,7 +11,7 @@ class ExitTests(TestCase):
     """An exit is an event row; recording one flips the device to exited."""
 
     def test_create_exit_flips_device_status(self):
-        device = Device.objects.create(status="reassembled_tested")
+        device = Device.objects.create(status="awaiting_exit")
         res = self.client.post(
             "/api/v1/exits/",
             {
@@ -31,7 +31,7 @@ class ExitTests(TestCase):
         self.assertEqual(exit_row.net, Decimal("26.87"))
 
     def test_return_then_resell_is_two_events(self):
-        device = Device.objects.create(status="reassembled_tested")
+        device = Device.objects.create(status="awaiting_exit")
         first = Exit.objects.create(device=device, kind="sold", sale_price=Decimal("30"))
         second = Exit.objects.create(
             device=device, kind="returned", sale_price=Decimal("-30")

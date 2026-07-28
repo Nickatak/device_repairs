@@ -10,7 +10,7 @@ const STATUS_BAND: Record<string, string> = {
   disassembled_parts: "band-inflight",
   disassembled_solder: "band-inflight",
   reassembled_untested: "band-inflight",
-  reassembled_tested: "band-good",
+  awaiting_exit: "band-good",
   exited: "band-dead",
 };
 

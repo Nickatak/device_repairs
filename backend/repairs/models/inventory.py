@@ -37,17 +37,20 @@ class Device(models.Model):
         # Two-family bench split (Nick, 2026-07-24, replacing in_repair/fixed):
         # the Disassembled family is PHYSICAL — it enumerates what's open on the
         # desk — with the sub-state naming what the unit is WAITING FOR (not
-        # whether it's blocked). Re-assembled = shell closed; tested is the old
-        # "fixed". A force-parked unit (shell closed mid-repair, open-gate rule)
-        # leaves the Disassembled family — its pending work lives in notes.
-        # The exit REASON (sold/parted/gifted…) stays in exit detail, not here.
+        # whether it's blocked). Re-assembled = shell closed. A force-parked
+        # unit (shell closed mid-repair, open-gate rule) leaves the Disassembled
+        # family — its pending work lives in notes.
+        # AWAITING_EXIT (renamed from "Re-assembled: Tested" 2026-07-28): bench
+        # work is over and the unit waits to leave — a PIPELINE position, not a
+        # quality claim (a unit awaiting a scrap exit sits here too). The exit
+        # REASON (sold/parted/gifted…) stays in exit detail, not here.
         SHIPPED = "shipped", "Shipped (inbound)"
         ACQUIRED = "acquired", "Acquired"
         DIS_DIAGNOSING = "disassembled_diagnosing", "Disassembled: Diagnosing"
         DIS_PARTS = "disassembled_parts", "Disassembled: Parts"
         DIS_SOLDER = "disassembled_solder", "Disassembled: Solder"
         RE_UNTESTED = "reassembled_untested", "Re-assembled: Untested"
-        RE_TESTED = "reassembled_tested", "Re-assembled: Tested"
+        AWAITING_EXIT = "awaiting_exit", "Awaiting exit"
         EXITED = "exited", "Exited"
 
     status = models.CharField(

@@ -60,10 +60,10 @@ class DeviceStatusTests(TestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_inventory_payload_carries_status(self):
-        Device.objects.create(status="reassembled_tested")
+        Device.objects.create(status="awaiting_exit")
         row = self.client.get("/api/v1/inventory/").json()[0]
-        self.assertEqual(row["status"], "reassembled_tested")
-        self.assertEqual(row["status_display"], "Re-assembled: Tested")
+        self.assertEqual(row["status"], "awaiting_exit")
+        self.assertEqual(row["status_display"], "Awaiting exit")
 
     def test_repair_created_explicitly_with_measurements_bucket(self):
         device = Device.objects.create()
