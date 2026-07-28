@@ -127,6 +127,7 @@ export default function DeviceDetail({
                     phase,
                     nextPosition: nextPosition(repair.notes),
                     templates: device.note_templates.filter((t) => t.phase === phase),
+                    reference: device.reference?.id ?? null,
                   })
                 }
                 onEditNote={(n: Note) => setModal({ mode: "edit", note: n })}

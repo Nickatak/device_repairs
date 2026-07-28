@@ -20,6 +20,9 @@ export type NoteModalState =
       phase: PhaseKey;
       nextPosition: number;
       templates: NoteTemplate[];
+      // Device's catalog row — targets the "create a template" link when
+      // this model × phase has none yet. Null = off-catalog unit.
+      reference: number | null;
     }
   | { mode: "edit"; note: Note };
 
@@ -172,7 +175,7 @@ export default function NoteModal({
     <Modal onClose={onClose}>
       <h2>{heading}</h2>
       <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
-        {!isEdit && template && (
+        {!isEdit && (
           <label className="narrow">
             Type
             <select
@@ -180,9 +183,24 @@ export default function NoteModal({
               onChange={(e) => pickKind(e.target.value as "text" | "template")}
             >
               <option value="text">Text</option>
-              <option value="template">{template.name}</option>
+              {template && <option value="template">{template.name}</option>}
             </select>
           </label>
+        )}
+        {!isEdit && !template && (
+          <p className="combo-hint">
+            No template for this model × {phaseLabel(state.phase)} yet —{" "}
+            <Link
+              href={
+                state.reference !== null
+                  ? `/templates?reference=${state.reference}`
+                  : "/templates"
+              }
+            >
+              create one
+            </Link>
+            .
+          </p>
         )}
 
         {kind === "template" && template ? (
