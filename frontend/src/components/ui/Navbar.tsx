@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,6 +13,51 @@ const LINKS = [
   { href: "/", label: "Inventory" },
   { href: "/stock", label: "Stock" },
 ];
+
+// Config/meta pages live behind the top-right menu, off the main pipeline tabs.
+const META_LINKS = [{ href: "/templates", label: "Note templates" }];
+
+function MetaMenu({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const active = META_LINKS.some((l) => pathname.startsWith(l.href));
+
+  return (
+    <div className="meta-menu" ref={rootRef}>
+      <button
+        className={`navbar-link meta-menu-button${active ? " active" : ""}`}
+        onClick={() => setOpen((o) => !o)}
+        title="Config pages"
+      >
+        ⋯
+      </button>
+      {open && (
+        <div className="meta-menu-list">
+          {META_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="meta-menu-item"
+              onClick={() => setOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -37,6 +83,7 @@ export default function Navbar() {
               </Link>
             );
           })}
+          <MetaMenu pathname={pathname} />
         </div>
       </div>
     </nav>

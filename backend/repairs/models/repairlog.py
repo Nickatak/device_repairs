@@ -1,9 +1,14 @@
-"""Bench work — Repair (phase-tracked engagement) and its contents: Note, Measurement, Part, Media."""
+"""Bench work — Repair (phase-tracked engagement) and its contents: Note, Measurement, Part, Media.
+
+Also home of the note-template layer (2026-07-28): per (catalog model × phase)
+prefill definitions the add-note modal offers alongside plain text.
+"""
 
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from .inventory import Device, DeviceNote
+from .reference import DeviceReference
 
 
 class Repair(models.Model):
@@ -81,11 +86,12 @@ class Repair(models.Model):
     def save(self, *args, **kwargs):
         # Every repair carries a standing "Measurements" note (position 0) — the
         # bucket for readings that belong to no specific notation. There's almost
-        # always at least a bundle of measurements (Nick, 2026-07-21).
+        # always at least a bundle of measurements (Nick, 2026-07-21). It lives
+        # on the Diagnostics phase since notes went per-phase (2026-07-28).
         created = self.pk is None
         super().save(*args, **kwargs)
         if created:
-            self.notes.create(position=0, title="Measurements")
+            self.notes.create(position=0, title="Measurements", phase="diagnostics")
         Device.touch(self.device_id)
 
     @property
@@ -109,16 +115,24 @@ class Repair(models.Model):
 
 
 class Note(models.Model):
-    """The spine: one notation within a Repair, ordered. (Renamed from Step 2026-07-21.)
+    """The spine: one notation within a Repair PHASE, ordered. (Renamed from Step 2026-07-21.)
 
     Untyped: the old Type enum (test / observation / repair / notation) collapsed —
     a test produces an observation, logging it makes it a notation, and a corrective
     entry is equally a notation of work done (the phase track already marks that
     repair work happened). A note is a dated entry: title, text, measurements.
     Sub-notes allowed ONE level deep; deeper nesting means the approach went wrong.
+
+    Per-phase since 2026-07-28: every note belongs to one repair-substep (`phase`)
+    — there are no repair-global notes. Sub-notes ride their parent's phase.
     """
 
     repair = models.ForeignKey(Repair, on_delete=models.CASCADE, related_name="notes")
+    phase = models.CharField(
+        max_length=20,
+        choices=Repair.PHASES,
+        help_text="The repair-substep this note documents. Sub-notes follow their parent.",
+    )
     parent = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.CASCADE, related_name="subnotes"
     )
@@ -148,6 +162,8 @@ class Note(models.Model):
                 raise ValidationError("A sub-note must belong to the same repair as its parent.")
 
     def save(self, *args, **kwargs):
+        if self.parent_id:
+            self.phase = self.parent.phase
         super().save(*args, **kwargs)
         Device.touch(self.repair.device_id)
 
@@ -217,6 +233,74 @@ class Part(models.Model):
 
     def __str__(self):
         return f"{self.quantity}× {self.name}"
+
+
+class NoteTemplate(models.Model):
+    """A prefill the add-note modal offers for one (catalog model × phase) — at most one.
+
+    'Hall Mod' on DS4 × Repair, 'Voltage readings' on Xbox One S × Diagnostics.
+    Selecting it renders the template's entries as editable note fields; saving
+    creates one Note per non-empty entry (plus its filled-in measurements).
+    Templates are CONFIG, not ledger — unlike the repair log they may be
+    deleted, and editing one never rewrites notes it already spawned.
+    """
+
+    reference = models.ForeignKey(
+        DeviceReference, on_delete=models.CASCADE, related_name="note_templates"
+    )
+    phase = models.CharField(max_length=20, choices=Repair.PHASES)
+    name = models.CharField(max_length=120, help_text="Dropdown label — 'Hall Mod', 'Voltage readings'.")
+
+    class Meta:
+        ordering = ["reference", "phase"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["reference", "phase"],
+                name="one_template_per_reference_per_phase",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.reference} · {self.get_phase_display()})"
+
+
+class NoteTemplateEntry(models.Model):
+    """One prefilled note field within a template ('L hall module')."""
+
+    template = models.ForeignKey(NoteTemplate, on_delete=models.CASCADE, related_name="entries")
+    position = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=255, blank=True, help_text="Prefilled note title.")
+    text = models.TextField(blank=True, help_text="Prefilled note body, editable in the modal.")
+
+    class Meta:
+        ordering = ["position", "id"]
+        verbose_name_plural = "note template entries"
+
+    def __str__(self):
+        return self.title or f"entry #{self.pk}"
+
+
+class NoteTemplateMeasurement(models.Model):
+    """A measurement slot on a template entry: name prefilled, value left to the bench.
+
+    `expected` renders as the value field's placeholder ('4.98 V nominal');
+    an entry saved with the value still blank creates no measurement row.
+    """
+
+    entry = models.ForeignKey(
+        NoteTemplateEntry, on_delete=models.CASCADE, related_name="measurements"
+    )
+    position = models.PositiveIntegerField(default=0)
+    what = models.CharField(max_length=200, help_text="Prefilled measurement name — '1.1V rail'.")
+    expected = models.CharField(
+        max_length=120, blank=True, help_text="Expected value, shown as placeholder — never auto-filled."
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def __str__(self):
+        return self.what
 
 
 class Media(models.Model):

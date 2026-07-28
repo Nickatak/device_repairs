@@ -74,6 +74,12 @@ class Command(BaseCommand):
                     defaults={
                         "title": note_spec["title"],
                         "text": note_spec["text"],
+                        # Same rule as the 0045 backfill: position-0 buckets are
+                        # Diagnostics, everything else defaults to Repair.
+                        "phase": note_spec.get(
+                            "phase",
+                            "diagnostics" if note_spec["position"] == 0 else "repair",
+                        ),
                         "started_at": (
                             midday(note_spec["started"]) if note_spec.get("started") else None
                         ),

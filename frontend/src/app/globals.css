@@ -971,6 +971,96 @@ button.phase-note {
 button.phase-note.add {
   margin-left: auto;
 }
+/* Per-phase accordion (2026-07-28): notes live inside each phase row. */
+.phase-expand {
+  /* Far right by default; when the "+ note" chip is already pushed right,
+     just trail it. */
+  margin-left: auto;
+  flex: 0 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.phase-row:has(button.phase-note.add) .phase-expand {
+  margin-left: 8px;
+}
+.phase-expand.has-notes {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.phase-body {
+  margin: 4px 0 10px 32px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+}
+/* Template entry blocks (note modal + authoring page). */
+.template-entry {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.template-measurements {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.template-measurement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.template-measurement input {
+  flex: 0 1 160px;
+}
+.template-measurement-row {
+  align-items: flex-end;
+}
+.template-editor {
+  margin-top: 18px;
+}
+.template-delete {
+  margin-right: auto;
+  color: #e66;
+}
+/* Top-right meta menu (config pages). */
+.meta-menu {
+  position: relative;
+}
+.meta-menu-button {
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.meta-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  z-index: 30;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.meta-menu-item {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.meta-menu-item:hover {
+  background: var(--border);
+}
 button.phase-note:hover {
   color: var(--text);
   border-color: var(--accent);

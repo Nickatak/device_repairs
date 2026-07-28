@@ -1,10 +1,18 @@
-"""Bench-work payloads — repairs (phase track), notes, measurements, media."""
+"""Bench-work payloads — repairs (phase track), notes, measurements, media, note templates."""
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 from repairs.exif import extract_taken_at, strip_gps
-from repairs.models import Measurement, Media, Note, Repair
+from repairs.models import (
+    Measurement,
+    Media,
+    Note,
+    NoteTemplate,
+    NoteTemplateEntry,
+    NoteTemplateMeasurement,
+    Repair,
+)
 
 COMPLETED_REPAIR_ERROR = "Repair is completed — un-mark completion to edit it."
 
@@ -45,6 +53,7 @@ class NoteSerializer(serializers.ModelSerializer):
         model = Note
         fields = [
             "id",
+            "phase",
             "position",
             "title",
             "text",
@@ -118,17 +127,29 @@ class RepairCreateSerializer(serializers.ModelSerializer):
 
 
 class NoteWriteSerializer(serializers.ModelSerializer):
-    """Create / edit a note (no delete). Enforces the one-level-deep hierarchy."""
+    """Create / edit a note (no delete). Enforces the one-level-deep hierarchy.
+
+    `phase` is required on create — every note lives on a repair-substep
+    (sub-notes inherit their parent's phase server-side regardless).
+    `measurements` is create-only sugar for the template flow: nested rows
+    land on the new note in one request.
+    """
+
+    measurements = MeasurementSerializer(many=True, required=False)
 
     class Meta:
         model = Note
-        fields = ["id", "repair", "parent", "position", "title", "text", "comment"]
+        fields = ["id", "repair", "phase", "parent", "position", "title", "text", "comment", "measurements"]
 
     def validate(self, attrs):
         parent = attrs.get("parent") or getattr(self.instance, "parent", None)
         repair = attrs.get("repair") or getattr(self.instance, "repair", None)
         if repair and repair.completed_at:
             raise serializers.ValidationError(COMPLETED_REPAIR_ERROR)
+        if self.instance and "measurements" in self.initial_data:
+            raise serializers.ValidationError(
+                {"measurements": "Nested measurements are create-only — use /measurements/ to edit."}
+            )
         if parent:
             if parent.parent_id:
                 raise serializers.ValidationError(
@@ -139,6 +160,76 @@ class NoteWriteSerializer(serializers.ModelSerializer):
                     "A sub-note must belong to the same repair as its parent."
                 )
         return attrs
+
+    def create(self, validated_data):
+        measurements = validated_data.pop("measurements", [])
+        note = super().create(validated_data)
+        for m in measurements:
+            note.measurements.create(**m)
+        return note
+
+
+class NoteTemplateMeasurementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NoteTemplateMeasurement
+        fields = ["id", "position", "what", "expected"]
+
+
+class NoteTemplateEntrySerializer(serializers.ModelSerializer):
+    measurements = NoteTemplateMeasurementSerializer(many=True, required=False)
+
+    class Meta:
+        model = NoteTemplateEntry
+        fields = ["id", "position", "title", "text", "measurements"]
+
+
+class NoteTemplateSerializer(serializers.ModelSerializer):
+    """Read + write shape for the authoring page. Nested entries write with
+    REPLACE-ALL semantics on update — templates are config, not ledger, so the
+    editor sends the whole definition and row ids churn."""
+
+    entries = NoteTemplateEntrySerializer(many=True)
+
+    class Meta:
+        model = NoteTemplate
+        fields = ["id", "reference", "phase", "name", "entries"]
+
+    def validate(self, attrs):
+        # One template per (model × phase) — enforced here for a clean 400
+        # (the DB constraint would 500 as IntegrityError).
+        reference = attrs.get("reference", getattr(self.instance, "reference", None))
+        phase = attrs.get("phase", getattr(self.instance, "phase", None))
+        clash = NoteTemplate.objects.filter(reference=reference, phase=phase)
+        if self.instance:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError(
+                {"phase": "This model already has a template for this phase (one max)."}
+            )
+        return attrs
+
+    def _write_entries(self, template, entries_data):
+        for entry_data in entries_data:
+            measurements = entry_data.pop("measurements", [])
+            entry_data.pop("id", None)
+            entry = template.entries.create(**entry_data)
+            for m in measurements:
+                m.pop("id", None)
+                entry.measurements.create(**m)
+
+    def create(self, validated_data):
+        entries = validated_data.pop("entries")
+        template = NoteTemplate.objects.create(**validated_data)
+        self._write_entries(template, entries)
+        return template
+
+    def update(self, instance, validated_data):
+        entries = validated_data.pop("entries", None)
+        instance = super().update(instance, validated_data)
+        if entries is not None:
+            instance.entries.all().delete()
+            self._write_entries(instance, entries)
+        return instance
 
 
 class MediaWriteSerializer(serializers.ModelSerializer):

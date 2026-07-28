@@ -431,6 +431,11 @@ export default function ReferenceView({
                             <p className="ref-configs">{it.configurations}</p>
                           )}
                           {it.notes && <p className="ref-notes">{it.notes}</p>}
+                          <p className="ref-configs">
+                            <Link href={`/templates?reference=${it.id}`} onClick={(e) => e.stopPropagation()}>
+                              Note templates for this model →
+                            </Link>
+                          </p>
                           <PullHistory pulls={it.comp_pulls} />
                         </td>
                       </tr>

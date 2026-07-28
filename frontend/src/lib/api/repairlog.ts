@@ -24,6 +24,7 @@ export interface MediaItem {
 
 export interface Note {
   id: number;
+  phase: PhaseKey;
   position: number;
   title: string;
   text: string;
@@ -32,6 +33,31 @@ export interface Note {
   measurements: Measurement[];
   media: MediaItem[];
   subnotes: Note[];
+}
+
+// Note-template layer: one prefill per (catalog model × phase), consumed by
+// the add-note modal. `expected` renders as the value placeholder only.
+export interface NoteTemplateMeasurement {
+  id: number;
+  position: number;
+  what: string;
+  expected: string;
+}
+
+export interface NoteTemplateEntry {
+  id: number;
+  position: number;
+  title: string;
+  text: string;
+  measurements: NoteTemplateMeasurement[];
+}
+
+export interface NoteTemplate {
+  id: number;
+  reference: number;
+  phase: PhaseKey;
+  name: string;
+  entries: NoteTemplateEntry[];
 }
 
 // Mirrors Repair.PHASES on the backend — the fixed bench pipeline.

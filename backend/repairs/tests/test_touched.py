@@ -69,7 +69,7 @@ class TouchedAtTests(TestCase):
         self.reset()
         res = self.client.post(
             "/api/v1/notes/",
-            {"repair": repair.pk, "position": 1, "title": "Symptom", "text": "no LED"},
+            {"repair": repair.pk, "phase": "diagnostics", "position": 1, "title": "Symptom", "text": "no LED"},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 201)

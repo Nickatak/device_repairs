@@ -9,7 +9,7 @@ from .reference import RevisionSerializer
 from .exits import ExitSerializer
 from .purchases import PurchaseSerializer
 from .reference import DeviceReferenceSerializer
-from .repairlog import MediaSerializer, RepairWithNotesSerializer
+from .repairlog import MediaSerializer, NoteTemplateSerializer, RepairWithNotesSerializer
 
 
 class DeviceNoteSerializer(serializers.ModelSerializer):
@@ -88,6 +88,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
     exits = ExitSerializer(many=True, read_only=True)
     device_notes = DeviceNoteSerializer(many=True, read_only=True)
     unit_cost = serializers.SerializerMethodField()
+    note_templates = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -100,6 +101,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "location",
             "purchase",
             "device_notes",
+            "note_templates",
             "status",
             "status_display",
             "reference",
@@ -112,6 +114,13 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
 
     def get_label(self, obj) -> str:
         return str(obj)
+
+    def get_note_templates(self, obj) -> list:
+        """Templates for this device's catalog model — what the add-note modal offers."""
+        if obj.reference_id is None:
+            return []
+        templates = obj.reference.note_templates.prefetch_related("entries__measurements")
+        return NoteTemplateSerializer(templates, many=True).data
 
     def get_unit_cost(self, obj) -> str | None:
         cost = obj.unit_cost

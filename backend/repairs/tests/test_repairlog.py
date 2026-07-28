@@ -115,7 +115,7 @@ class CompletedRepairFreezeTests(TestCase):
     def test_note_create_rejected(self):
         res = self.client.post(
             "/api/v1/notes/",
-            {"repair": self.repair.pk, "position": 1, "title": "late entry"},
+            {"repair": self.repair.pk, "phase": "repair", "position": 1, "title": "late entry"},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 400)

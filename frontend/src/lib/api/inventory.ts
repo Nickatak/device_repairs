@@ -4,7 +4,7 @@ import { API_BASE } from "./client";
 import type { Exit } from "./exits";
 import type { Purchase } from "./purchases";
 import type { ReferenceItem, Revision } from "./reference";
-import type { MediaItem, RepairWithNotes } from "./repairlog";
+import type { MediaItem, NoteTemplate, RepairWithNotes } from "./repairlog";
 
 // A unit-grain fact chunk — accretes like a repair note, carries intake photos.
 export interface DeviceNote {
@@ -50,6 +50,7 @@ export interface DeviceDetail {
   location: string | null;
   purchase: Purchase | null;
   device_notes: DeviceNote[];
+  note_templates: NoteTemplate[];
   status: string;
   status_display: string;
   reference: ReferenceItem | null;

@@ -6,14 +6,13 @@ import { useRouter } from "next/navigation";
 import { createRepair } from "@/app/actions";
 import type { DeviceDetail as DeviceDetailT } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
-import type { Note } from "@/lib/api/repairlog";
+import type { Note, PhaseKey } from "@/lib/api/repairlog";
 import { formatDateTime } from "@/lib/format";
 import DeviceCard from "./DeviceCard";
 import DeviceCardEdit from "./DeviceCardEdit";
 import DeviceNotes from "./DeviceNotes";
 import Exits from "./Exits";
 import NoteModal, { type NoteModalState } from "./NoteModal";
-import NoteRow from "./NoteRow";
 import PhaseTrack from "./PhaseTrack";
 
 function nextPosition(notes: Note[]): number {
@@ -116,40 +115,22 @@ export default function DeviceDetail({
               </button>
             </div>
             {!minimized.has(repair.id) && (
-              <>
-                <PhaseTrack deviceId={device.id} repair={repair} />
-                {!repair.completed_at && (
-                  <div className="add-note-row">
-                    <button
-                      className="btn-edit"
-                      onClick={() =>
-                        setModal({
-                          mode: "create",
-                          repairId: repair.id,
-                          nextPosition: nextPosition(repair.notes),
-                        })
-                      }
-                    >
-                      + Add note
-                    </button>
-                  </div>
-                )}
-                {repair.notes.length === 0 ? (
-                  <p className="empty-steps">No notes yet.</p>
-                ) : (
-                  <ol className="notes-list">
-                    {repair.notes.map((note) => (
-                      <NoteRow
-                        key={note.id}
-                        deviceId={device.id}
-                        note={note}
-                        frozen={!!repair.completed_at}
-                        onEdit={(n) => setModal({ mode: "edit", note: n })}
-                      />
-                    ))}
-                  </ol>
-                )}
-              </>
+              // Notes are per-phase (2026-07-28): they live inside each phase
+              // row's accordion body — there is no repair-global notes list.
+              <PhaseTrack
+                deviceId={device.id}
+                repair={repair}
+                onAddNote={(phase: PhaseKey) =>
+                  setModal({
+                    mode: "create",
+                    repairId: repair.id,
+                    phase,
+                    nextPosition: nextPosition(repair.notes),
+                    templates: device.note_templates.filter((t) => t.phase === phase),
+                  })
+                }
+                onEditNote={(n: Note) => setModal({ mode: "edit", note: n })}
+              />
             )}
           </section>
         ))

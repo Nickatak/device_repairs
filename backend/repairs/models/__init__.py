@@ -13,7 +13,16 @@ from .exits import Exit
 from .inventory import Device, DeviceNote, Location
 from .purchases import Purchase, Source
 from .reference import CompPull, DeviceReference, Issue, Lane, Revision, Variant
-from .repairlog import Measurement, Media, Note, Part, Repair
+from .repairlog import (
+    Measurement,
+    Media,
+    Note,
+    NoteTemplate,
+    NoteTemplateEntry,
+    NoteTemplateMeasurement,
+    Part,
+    Repair,
+)
 from .stock import StockIntake, StockItem
 
 __all__ = [
@@ -28,6 +37,9 @@ __all__ = [
     "Measurement",
     "Media",
     "Note",
+    "NoteTemplate",
+    "NoteTemplateEntry",
+    "NoteTemplateMeasurement",
     "Part",
     "Purchase",
     "Repair",

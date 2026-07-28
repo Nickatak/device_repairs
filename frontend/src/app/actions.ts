@@ -220,10 +220,13 @@ export async function updateRepair(
 
 export interface NoteWrite {
   repair: number;
+  phase: string;
   position: number;
   title: string;
   text: string;
   comment: string;
+  // Create-only (the template flow): rows land on the new note in one request.
+  measurements?: { what: string; value: string; comment?: string }[];
 }
 
 export async function createNote(
@@ -236,9 +239,56 @@ export async function createNote(
 export async function updateNote(
   deviceId: number,
   noteId: number,
-  data: Omit<NoteWrite, "repair">,
+  data: Omit<NoteWrite, "repair" | "measurements">,
 ): Promise<WriteResult> {
   return send(`${API_BASE}/notes/${noteId}/`, "PATCH", data, `/devices/${deviceId}`);
+}
+
+// --- Note templates: config CRUD (the one API surface WITH delete) ---
+
+export interface TemplateMeasurementWrite {
+  position: number;
+  what: string;
+  expected: string;
+}
+
+export interface TemplateEntryWrite {
+  position: number;
+  title: string;
+  text: string;
+  measurements: TemplateMeasurementWrite[];
+}
+
+export interface TemplateWrite {
+  reference: number;
+  phase: string;
+  name: string;
+  entries: TemplateEntryWrite[];
+}
+
+export async function createTemplate(data: TemplateWrite): Promise<WriteResult> {
+  return send(`${API_BASE}/templates/`, "POST", data, "/templates");
+}
+
+export async function updateTemplate(
+  id: number,
+  data: TemplateWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/templates/${id}/`, "PATCH", data, "/templates");
+}
+
+export async function deleteTemplate(id: number): Promise<WriteResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/templates/${id}/`, { method: "DELETE" });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+  }
+  if (!res.ok) {
+    return { ok: false, error: `${res.status}: ${(await res.text()).slice(0, 300)}` };
+  }
+  revalidatePath("/templates");
+  return { ok: true };
 }
 
 export interface DeviceNoteWrite {
