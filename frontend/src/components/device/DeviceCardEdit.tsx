@@ -18,12 +18,13 @@ function asInventoryItem(device: DeviceDetailT): InventoryItem {
     serial: device.serial,
     location: device.location,
     purchase: device.purchase,
-    notes: device.notes,
+    notes: "", // chunked — the edit form no longer touches notes
     status: device.status,
     status_display: device.status_display,
     repair_count: device.repairs.length,
     cost_override: device.cost_override,
     unit_cost: device.unit_cost,
+    touched_at: device.touched_at,
   };
 }
 

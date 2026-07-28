@@ -1,6 +1,7 @@
 """Physical inventory — Device (the unit on the bench/shelf) + Location (where it sits)."""
 
 from django.db import models
+from django.utils import timezone
 
 from django.core.exceptions import ValidationError
 
@@ -122,9 +123,19 @@ class Device(models.Model):
             "Null = derive from the purchase."
         ),
     )
-    notes = models.TextField(
-        blank=True, help_text="Facts about the unit, not any one step (e.g. 'uses a 19V brick')."
+    touched_at = models.DateTimeField(
+        auto_now=True,
+        help_text=(
+            "Last edit anywhere in the unit's tree — device fields, unit notes, "
+            "repairs and their notes/measurements/parts/photos, exits. Child "
+            "models bump it via Device.touch()."
+        ),
     )
+
+    @classmethod
+    def touch(cls, device_id):
+        """Stamp touched_at without firing save() — the child-write bump."""
+        cls.objects.filter(pk=device_id).update(touched_at=timezone.now())
 
     def clean(self):
         if self.revision_id and self.revision.reference_id != self.reference_id:
@@ -147,3 +158,32 @@ class Device(models.Model):
         if self.reference_id:
             return str(self.reference)
         return self.serial or "(unidentified device)"
+
+
+class DeviceNote(models.Model):
+    """Unit-grain fact, one chunk per entry (replaced the Device.notes blob 2026-07-27).
+
+    The device-scoped counterpart of the repair Note: facts about the unit that
+    outlive any one repair (provenance, colorway questions, 'uses a 19V brick')
+    accrete as dated chunks instead of re-editing one text field. Deliberately
+    thinner than Note — no nesting, no measurements: bench observations belong
+    on a Repair. Photos attach (intake/listing shots predate any repair).
+    """
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="device_notes")
+    position = models.PositiveIntegerField(
+        default=0, help_text="Ordering on the device page; ties resolve by id (creation order)."
+    )
+    title = models.CharField(max_length=255, blank=True, help_text="Short heading for the chunk.")
+    text = models.TextField(blank=True, help_text="The fact — unit-grain, not bench-step-grain.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["position", "id"]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        Device.touch(self.device_id)
+
+    def __str__(self):
+        return self.title or self.text[:50]

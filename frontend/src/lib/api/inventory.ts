@@ -4,7 +4,17 @@ import { API_BASE } from "./client";
 import type { Exit } from "./exits";
 import type { Purchase } from "./purchases";
 import type { ReferenceItem, Revision } from "./reference";
-import type { RepairWithNotes } from "./repairlog";
+import type { MediaItem, RepairWithNotes } from "./repairlog";
+
+// A unit-grain fact chunk — accretes like a repair note, carries intake photos.
+export interface DeviceNote {
+  id: number;
+  position: number;
+  title: string;
+  text: string;
+  created_at: string;
+  media: MediaItem[];
+}
 
 export interface InventoryItem {
   id: number;
@@ -21,6 +31,7 @@ export interface InventoryItem {
   repair_count: number;
   cost_override: string | null;
   unit_cost: string | null;
+  touched_at: string;
 }
 
 export async function getInventory(): Promise<InventoryItem[]> {
@@ -38,7 +49,7 @@ export interface DeviceDetail {
   serial: string;
   location: string | null;
   purchase: Purchase | null;
-  notes: string;
+  device_notes: DeviceNote[];
   status: string;
   status_display: string;
   reference: ReferenceItem | null;
@@ -47,6 +58,7 @@ export interface DeviceDetail {
   exits: Exit[];
   cost_override: string | null;
   unit_cost: string | null;
+  touched_at: string;
 }
 
 export async function getDevice(id: number): Promise<DeviceDetail> {

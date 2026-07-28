@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
-import { bandClass, formatDate, formatPrice, isDisassembled } from "@/lib/format";
+import { bandClass, formatDate, formatDateTime, formatPrice, isDisassembled } from "@/lib/format";
 import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
 import DeviceModal from "./DeviceModal";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
@@ -22,7 +22,7 @@ function StatusBadge({ item }: { item: InventoryItem }) {
 
 type ModalState = { mode: "create" } | { mode: "edit"; item: InventoryItem } | null;
 
-type SortKey = "ref" | "device" | "purchase" | "acquired" | "arrived";
+type SortKey = "ref" | "device" | "purchase" | "acquired" | "arrived" | "edited";
 
 function sortValue(item: InventoryItem, key: SortKey): string | number | null {
   switch (key) {
@@ -36,6 +36,8 @@ function sortValue(item: InventoryItem, key: SortKey): string | number | null {
       return item.unit_cost != null ? Number(item.unit_cost) : null;
     case "arrived":
       return item.purchase?.arrived_on ?? null;
+    case "edited":
+      return item.touched_at;
   }
 }
 
@@ -81,7 +83,8 @@ export default function InventoryView({
   const [statusFilter, setStatusFilter] = useState<string | null>(() =>
     items.some((it) => isDisassembled(it.status)) ? "disassembled" : null,
   );
-  const { sort, toggle } = useSort<SortKey>();
+  // Fresh page = most recently worked first; any column click takes over.
+  const { sort, toggle } = useSort<SortKey>({ key: "edited", dir: -1 });
 
   // Status chips in lifecycle order, only for statuses actually present.
   const presentStatuses = options.statuses.filter((s) =>
@@ -181,6 +184,7 @@ export default function InventoryView({
               <SortTh label="Acquired" k="acquired" sort={sort} onToggle={toggle} className="num" />
               <SortTh label="Arrived" k="arrived" sort={sort} onToggle={toggle} />
               <th>Status</th>
+              <SortTh label="Edited" k="edited" sort={sort} onToggle={toggle} />
               <th aria-label="actions"></th>
             </tr>
           </thead>
@@ -227,6 +231,7 @@ export default function InventoryView({
                 <td>
                   <StatusBadge item={item} />
                 </td>
+                <td>{formatDateTime(item.touched_at)}</td>
                 <td className="num">
                   <button
                     className="btn-edit"
@@ -242,7 +247,7 @@ export default function InventoryView({
             <tr className="total-row">
               <td colSpan={4}>{filtered ? "Total (filtered)" : "Total spent"}</td>
               <td className="num">${totalSpent.toFixed(2)}</td>
-              <td colSpan={3}></td>
+              <td colSpan={4}></td>
             </tr>
           </tfoot>
         </table>

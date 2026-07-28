@@ -3,7 +3,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from .inventory import Device
+from .inventory import Device, DeviceNote
 
 
 class Repair(models.Model):
@@ -69,6 +69,7 @@ class Repair(models.Model):
         super().save(*args, **kwargs)
         if created:
             self.notes.create(position=0, title="Measurements")
+        Device.touch(self.device_id)
 
     @property
     def current_phase(self):
@@ -129,6 +130,10 @@ class Note(models.Model):
             if self.parent.repair_id != self.repair_id:
                 raise ValidationError("A sub-note must belong to the same repair as its parent.")
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        Device.touch(self.repair.device_id)
+
     def __str__(self):
         return self.title or self.text[:50]
 
@@ -155,6 +160,10 @@ class Measurement(models.Model):
     comment = models.TextField(
         blank=True, help_text="The 'why', or a provisional conclusion."
     )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        Device.touch(self.note.repair.device_id)
 
     def __str__(self):
         return f"{self.what}: {self.value or '—'}"
@@ -185,15 +194,21 @@ class Part(models.Model):
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        Device.touch(self.note.repair.device_id)
+
     def __str__(self):
         return f"{self.quantity}× {self.name}"
 
 
 class Media(models.Model):
-    """Before/after & condition photos. Attaches to EITHER a Repair OR a Note (exactly one).
+    """Before/after & condition photos. Attaches to exactly ONE of: Repair, Note, or DeviceNote.
 
     The load-bearing case is condition documentation — photograph a pre-existing defect on
     intake so a later 'they broke my screen' claim is answered with the intake photo.
+    DeviceNote attachment (2026-07-27) is what makes that possible BEFORE bench work
+    exists — intake/listing shots ride the device, not a repair.
     """
 
     image = models.ImageField(upload_to="repair_media/")
@@ -213,22 +228,38 @@ class Media(models.Model):
     note = models.ForeignKey(
         Note, null=True, blank=True, on_delete=models.CASCADE, related_name="media"
     )
+    device_note = models.ForeignKey(
+        DeviceNote, null=True, blank=True, on_delete=models.CASCADE, related_name="media"
+    )
 
     class Meta:
         verbose_name_plural = "media"
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(repair__isnull=False, note__isnull=True)
-                    | models.Q(repair__isnull=True, note__isnull=False)
+                    models.Q(repair__isnull=False, note__isnull=True, device_note__isnull=True)
+                    | models.Q(repair__isnull=True, note__isnull=False, device_note__isnull=True)
+                    | models.Q(repair__isnull=True, note__isnull=True, device_note__isnull=False)
                 ),
                 name="media_attaches_to_exactly_one_parent",
             )
         ]
 
     def clean(self):
-        if bool(self.repair_id) == bool(self.note_id):
-            raise ValidationError("Media must attach to exactly one of: a repair OR a note.")
+        parents = [self.repair_id, self.note_id, self.device_note_id]
+        if sum(1 for p in parents if p) != 1:
+            raise ValidationError(
+                "Media must attach to exactly one of: a repair, a note, OR a device note."
+            )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.device_note_id:
+            Device.touch(self.device_note.device_id)
+        elif self.repair_id:
+            Device.touch(self.repair.device_id)
+        elif self.note_id:
+            Device.touch(self.note.repair.device_id)
 
     def __str__(self):
         return self.caption or f"Media #{self.pk}"

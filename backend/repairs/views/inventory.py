@@ -1,13 +1,14 @@
-"""Inventory endpoints — device list/create, device detail, bulk add."""
+"""Inventory endpoints — device list/create, device detail, device notes, bulk add."""
 
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveUpdateAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from repairs.models import Device
+from repairs.models import Device, DeviceNote
 from repairs.serializers import (
     DeviceBulkCreateSerializer,
     DeviceDetailSerializer,
+    DeviceNoteWriteSerializer,
     DeviceWriteSerializer,
     InventoryDeviceSerializer,
 )
@@ -18,7 +19,7 @@ class InventoryListView(ListCreateAPIView):
 
     queryset = (
         Device.objects.select_related("purchase__source", "location", "reference")
-        .prefetch_related("repairs")
+        .prefetch_related("repairs", "device_notes")
         .order_by("reference__brand", "reference__name", "id")
     )
 
@@ -38,6 +39,7 @@ class DeviceDetailView(RetrieveUpdateAPIView):
     ).prefetch_related(
         "repairs__notes__measurements",
         "repairs__notes__subnotes__measurements",
+        "device_notes__media",
         "reference__issues",
         "reference__variants",
         "reference__comp_pulls__variant",
@@ -49,6 +51,20 @@ class DeviceDetailView(RetrieveUpdateAPIView):
             if self.request.method in ("PUT", "PATCH")
             else DeviceDetailSerializer
         )
+
+
+class DeviceNoteCreateView(CreateAPIView):
+    """POST a new device-note chunk (unit-grain fact). No delete path by design."""
+
+    serializer_class = DeviceNoteWriteSerializer
+    queryset = DeviceNote.objects.all()
+
+
+class DeviceNoteUpdateView(UpdateAPIView):
+    """PATCH an existing device-note chunk. No delete path by design."""
+
+    serializer_class = DeviceNoteWriteSerializer
+    queryset = DeviceNote.objects.all()
 
 
 class DeviceBulkCreateView(APIView):

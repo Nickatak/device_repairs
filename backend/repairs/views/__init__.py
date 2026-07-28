@@ -10,7 +10,13 @@ options.py and cash.py for the cross-domain aggregates. This barrel keeps
 
 from .cash import CashSummaryView
 from .exits import ExitCreateView, ExitUpdateView
-from .inventory import DeviceBulkCreateView, DeviceDetailView, InventoryListView
+from .inventory import (
+    DeviceBulkCreateView,
+    DeviceDetailView,
+    DeviceNoteCreateView,
+    DeviceNoteUpdateView,
+    InventoryListView,
+)
 from .options import OptionsView
 from .purchases import PurchaseArriveView, PurchaseDetailView, PurchaseListCreateView
 from .reference import (
@@ -41,6 +47,8 @@ __all__ = [
     "CashSummaryView",
     "DeviceBulkCreateView",
     "DeviceDetailView",
+    "DeviceNoteCreateView",
+    "DeviceNoteUpdateView",
     "ExitCreateView",
     "ExitUpdateView",
     "InventoryListView",

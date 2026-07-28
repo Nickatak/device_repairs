@@ -17,6 +17,7 @@ export interface MediaItem {
   caption: string;
   note: number | null;
   repair: number | null;
+  device_note: number | null;
   taken_at: string | null;
   created_at: string;
 }

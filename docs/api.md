@@ -32,6 +32,11 @@ predict, the source under `backend/repairs/` wins.
 - `ledger_ref` fields are read-only CSV-import keys. Site-created rows leave
   them blank and display as `#<id>` — that's correct, don't try to continue the
   `0004`-style numbering.
+- Devices carry a read-only `touched_at` — last edit anywhere in the unit's
+  tree (device fields, device notes, repairs and their notes / measurements /
+  parts / photos, exits, the arrival flip). Bumped server-side on every write;
+  never write it yourself. Note it bumps on ANY successful PATCH, including a
+  no-op — don't "verify" with a write.
 - After writing, GET the object back (or load the page) and confirm the state
   you meant to create. Report IDs to Nick so rows are findable.
 
@@ -90,7 +95,8 @@ lookups reuse existing rows ("eBay", not "Ebay").
 - Lines carry heterogeneity — one line per model in the lot. ≤100 units total.
 - `status: "shipped"` for a fresh order (it's inbound). The arrival call flips
   these later.
-- Optional shared `location` / `notes` apply to every spawned row.
+- Optional shared `location` applies to every spawned row; optional shared
+  `notes` becomes each unit's FIRST device-note chunk (see "device notes").
 - Returns `{"created": 3, "ids": [101, 102, 103]}`.
 
 **4. Mixed-lot pricing (only when Nick states per-unit values)** — the default
@@ -113,7 +119,29 @@ in one stroke; units already past shipped are untouched. Returns
 
 Per-unit facts learned at intake (serial, actual model, condition) go on each
 device: `PATCH /inventory/<id>/` with any of `serial`, `reference`, `location`,
-`notes`, `status`, `cost_override`, `purchase`.
+`status`, `cost_override`, `purchase`. Prose facts go through device notes
+(below) — a PATCH sending `notes` 400s since 2026-07-27.
+
+## Recipe: device notes (unit-grain facts)
+
+Since 2026-07-27 device notes are CHUNKS, not one blob — same shape as repair
+notes: entries accrete, each dated, each can carry photos. Unit-grain facts
+("uses a 19V brick", colorway questions, intake condition) live here; bench
+observations still belong on a Repair's notes.
+
+- **Add a chunk**: `POST /device-notes/` `{"device": 147, "position": 1,
+  "title": "", "text": "rev read: JDM-055"}`. `position` orders the page
+  (ties resolve by id, so equal positions read in creation order).
+- **Edit a chunk**: `PATCH /device-notes/<id>/` (partial). No DELETE, as
+  everywhere.
+- **Photos** attach per chunk: `POST /media/` multipart with `device_note=<id>`
+  (instead of `note`/`repair`). This is the home for intake/listing shots that
+  predate any repair; the completed-repair freeze never applies here.
+- Device create sugar: `POST /inventory/` and `POST /inventory/bulk/` still
+  accept a `notes` string — it spawns the unit's first chunk (position 0).
+- Read side: the device detail payload carries `device_notes` (chunks with
+  `media` arrays); the inventory LIST payload's `notes` field still exists but
+  is now read-only — all chunks flattened to one string for search/display.
 
 ## Recipe: parts stock (buckets, intakes, recounts)
 
@@ -208,8 +236,8 @@ record.
 ## Recipe: photos on a note (or repair)
 
 `POST /media/` — **multipart**, not JSON: `image` (the file) + `caption`
-(optional) + exactly one of `note` / `repair` (id). One photo per row; loop for
-a batch.
+(optional) + exactly one of `note` / `repair` / `device_note` (id). One photo
+per row; loop for a batch.
 
 ```
 curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
@@ -237,10 +265,11 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 
 | Method + path | Purpose |
 |---|---|
-| GET `/inventory/` | All devices (label, status, purchase embed, unit_cost) |
-| POST `/inventory/` | Create one device (`reference`, `serial`, `location`, `purchase`, `notes`, `status`, `cost_override`) |
+| GET `/inventory/` | All devices (label, status, purchase embed, unit_cost, touched_at) |
+| POST `/inventory/` | Create one device (`reference`, `serial`, `location`, `purchase`, `status`, `cost_override`; `notes` spawns the first chunk) |
 | POST `/inventory/bulk/` | Spawn N devices from one purchase (lines) |
-| GET/PATCH `/inventory/<id>/` | Device detail (repairs, notes, exits nested) / edit device fields |
+| GET/PATCH `/inventory/<id>/` | Device detail (repairs, device_notes, exits nested) / edit device fields |
+| POST `/device-notes/` · PATCH `/device-notes/<id>/` | Unit-fact chunks on a device (add / edit, no delete) |
 | GET `/purchases/` | Buy events, newest first |
 | POST `/purchases/` | Record a purchase |
 | GET/PATCH `/purchases/<id>/` | Purchase + its `devices` array / edit purchase fields |
@@ -250,7 +279,7 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 | POST `/repairs/` · PATCH `/repairs/<id>/` | Start repair · phase track/completion |
 | POST `/notes/` · PATCH `/notes/<id>/` | Bench notes (one-level nesting) |
 | POST `/measurements/` · PATCH `/measurements/<id>/` | Readings on a note |
-| POST `/media/` · PATCH `/media/<id>/` | Photo upload (multipart; GPS-stripped, EXIF taken_at) · caption/reparent |
+| POST `/media/` · PATCH `/media/<id>/` | Photo upload (multipart, parent = note/repair/device_note; GPS-stripped, EXIF taken_at) · caption/reparent |
 | GET/POST `/stock/` | Buckets with live counts / mint a SKU |
 | GET/PATCH `/stock/<id>/` | Bucket detail / identity + state edits (never count) |
 | POST `/stock/<id>/recount/` | Physical recount: new base + stamp |

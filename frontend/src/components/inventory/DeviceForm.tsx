@@ -240,14 +240,17 @@ export function DeviceFields({
           />
         </label>
       )}
-      <label>
-        Notes
-        <textarea
-          rows={3}
-          value={form.notes}
-          onChange={(e) => set("notes", e.target.value)}
-        />
-      </label>
+      {createMode && (
+        <label>
+          Initial note
+          <textarea
+            rows={3}
+            placeholder="intake fault line — becomes the unit's first note chunk"
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+          />
+        </label>
+      )}
     </>
   );
 }

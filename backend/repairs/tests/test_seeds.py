@@ -3,7 +3,7 @@
 from django.core.management import call_command
 from django.test import TestCase
 
-from repairs.models import CompPull, Device, DeviceReference, Lane, Purchase
+from repairs.models import CompPull, Device, DeviceNote, DeviceReference, Lane, Purchase
 
 from .helpers import make_ref
 
@@ -179,9 +179,11 @@ class SeedUnitsTests(TestCase):
         unit = Device.objects.get(ledger_ref="0004-1")
         self.assertEqual(unit.purchase.ledger_ref, "0004")
         self.assertEqual(unit.status, "exited")  # ledger "sold" folds into exited
-        self.assertIn("[exit: sold]", unit.notes)
+        # CSV note fields land as the unit's first DeviceNote chunk.
+        unit_notes = unit.device_notes.get(position=0).text
+        self.assertIn("[exit: sold]", unit_notes)
         self.assertEqual(unit.label, "DS4 v2 (CUH-ZCT2U)")
-        self.assertIn("[bench label: CTRL_1]", unit.notes)
+        self.assertIn("[bench label: CTRL_1]", unit_notes)
         # "in-repair" (CSV) → the generic Disassembled member (bench split 2026-07-24).
         self.assertTrue(Device.objects.filter(status="disassembled_diagnosing").exists())
         # Multi-lot ledger_ids resolve: 0010 lives in purchase "0001;0010;0022".
@@ -189,5 +191,8 @@ class SeedUnitsTests(TestCase):
         self.assertEqual(keyboard.purchase.ledger_ref, "0001;0010;0022")
         # Lot arrival backfilled from earliest unit acquired date.
         self.assertEqual(str(Device.objects.get(ledger_ref="0004-2").purchase.arrived_on), "2026-06-08")
+        chunk_count = DeviceNote.objects.count()
         call_command("seed_units")
         self.assertEqual(Device.objects.count(), count)
+        # Re-run refreshes the imported chunk in place — never a duplicate row.
+        self.assertEqual(DeviceNote.objects.count(), chunk_count)

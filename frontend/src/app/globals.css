@@ -425,6 +425,10 @@ ol.subnotes {
 .note-title {
   font-weight: 600;
 }
+.note-date {
+  color: var(--muted);
+  font-size: 0.85em;
+}
 .note-text {
   margin-top: 4px;
   white-space: pre-wrap;
@@ -961,6 +965,11 @@ button.phase-note {
   border-radius: 6px;
   padding: 3px 9px;
   cursor: pointer;
+}
+/* The empty "+ note" affordance hugs the right edge so it reads as a control,
+   not note content; a phase WITH a note keeps its chip inline after the date. */
+button.phase-note.add {
+  margin-left: auto;
 }
 button.phase-note:hover {
   color: var(--text);

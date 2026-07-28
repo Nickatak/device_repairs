@@ -9,7 +9,7 @@ Mapping (CSV → Device):
     id       → ledger_ref (natural key); lot prefix links purchase ("0004-1" → 0004)
     model    → label (verbatim — unit specificity) + reference via MODEL_MAP
     status   → status ("in-repair" → "in_repair"; the rest match)
-    fault / notes / label(bench) / listed / sold / sale_price / fees → notes
+    fault / notes / label(bench) / listed / sold / sale_price / fees → first DeviceNote chunk
     acquired → backfills the lot's Purchase.arrived_on (earliest unit date) when unset
     ignore (non-empty) → row skipped
 
@@ -173,16 +173,26 @@ class Command(BaseCommand):
                 if purchase and acquired:
                     prev = arrivals.get(purchase)
                     arrivals[purchase] = min(prev, acquired) if prev else acquired
-                _, made = Device.objects.update_or_create(
+                device, made = Device.objects.update_or_create(
                     ledger_ref=unit_id,
                     defaults={
                         "label": model_string,
                         "reference": reference,
                         "purchase": purchase,
                         "status": STATUS_MAP.get(row["status"], row["status"]),
-                        "notes": build_notes(row),
                     },
                 )
+                # CSV note fields land as the first DeviceNote chunk (the blob
+                # field died 2026-07-27). Overwrite-or-create keeps the old
+                # clobber-on-rerun semantics of seeding notes.
+                notes = build_notes(row)
+                if notes:
+                    first = device.device_notes.order_by("position", "id").first()
+                    if first is None:
+                        device.device_notes.create(position=0, text=notes)
+                    elif first.text != notes:
+                        first.text = notes
+                        first.save(update_fields=["text"])
                 created += made
                 updated += not made
 

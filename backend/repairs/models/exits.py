@@ -54,6 +54,10 @@ class Exit(models.Model):
     class Meta:
         ordering = ["-happened_on", "-id"]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        Device.touch(self.device_id)
+
     @property
     def net(self):
         """Money actually kept: sale_price − fees. None when no money changed hands."""

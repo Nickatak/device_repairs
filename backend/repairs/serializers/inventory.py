@@ -2,14 +2,32 @@
 
 from rest_framework import serializers
 
-from repairs.models import Device, DeviceReference, Location, Purchase, Revision
+from repairs.models import Device, DeviceNote, DeviceReference, Location, Purchase, Revision
 
 from .reference import RevisionSerializer
 
 from .exits import ExitSerializer
 from .purchases import PurchaseSerializer
 from .reference import DeviceReferenceSerializer
-from .repairlog import RepairWithNotesSerializer
+from .repairlog import MediaSerializer, RepairWithNotesSerializer
+
+
+class DeviceNoteSerializer(serializers.ModelSerializer):
+    """A unit-fact chunk with its photos — nested in the device payloads."""
+
+    media = MediaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = DeviceNote
+        fields = ["id", "position", "title", "text", "created_at", "media"]
+
+
+class DeviceNoteWriteSerializer(serializers.ModelSerializer):
+    """Create / edit a device-note chunk. No delete path, same as the repair log."""
+
+    class Meta:
+        model = DeviceNote
+        fields = ["id", "device", "position", "title", "text"]
 
 
 class InventoryDeviceSerializer(serializers.ModelSerializer):
@@ -20,6 +38,7 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
     repair_count = serializers.IntegerField(source="repairs.count", read_only=True)
     unit_cost = serializers.SerializerMethodField()
     revision = RevisionSerializer(read_only=True)
+    notes = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
@@ -38,10 +57,18 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
             "repair_count",
             "cost_override",
             "unit_cost",
+            "touched_at",
         ]
 
     def get_label(self, obj) -> str:
         return str(obj)
+
+    def get_notes(self, obj) -> str:
+        """Chunks flattened to one string — the list payload's search/display shape."""
+        return "\n\n".join(
+            f"{n.title}\n{n.text}" if n.title else n.text
+            for n in obj.device_notes.all()
+        )
 
     def get_unit_cost(self, obj) -> str | None:
         cost = obj.unit_cost
@@ -59,6 +86,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
     revision = RevisionSerializer(read_only=True)
     repairs = RepairWithNotesSerializer(many=True, read_only=True)
     exits = ExitSerializer(many=True, read_only=True)
+    device_notes = DeviceNoteSerializer(many=True, read_only=True)
     unit_cost = serializers.SerializerMethodField()
 
     class Meta:
@@ -71,7 +99,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "serial",
             "location",
             "purchase",
-            "notes",
+            "device_notes",
             "status",
             "status_display",
             "reference",
@@ -79,6 +107,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "exits",
             "cost_override",
             "unit_cost",
+            "touched_at",
         ]
 
     def get_label(self, obj) -> str:
@@ -97,6 +126,10 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
     never as device-local fields. `status` is the device's own lifecycle field —
     writing it never touches repairs (the old phantom-repair-as-status-carrier
     behavior is gone).
+
+    `notes` is create-only sugar: it spawns the device's first DeviceNote chunk
+    (the intake fault line). Edits go through /device-notes/ — a PATCH sending
+    notes is an old client and gets a loud 400, not a silent drop.
     """
 
     # Lookup fields → which model resolves them.
@@ -112,6 +145,9 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
         queryset=Purchase.objects.all(), required=False, allow_null=True
     )
     location = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    notes = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, default=""
+    )
 
     class Meta:
         model = Device
@@ -127,6 +163,10 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        if self.instance and "notes" in self.initial_data:
+            raise serializers.ValidationError(
+                {"notes": "Device notes are chunked — write via /device-notes/."}
+            )
         # Revision must belong to the device's reference — resolve both against
         # what this write leaves in place, not just what it sends.
         revision = attrs.get(
@@ -153,10 +193,15 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
         return resolved
 
     def create(self, validated_data):
+        notes = validated_data.pop("notes", "").strip()
         resolved = self._resolve_lookups(validated_data)
-        return Device.objects.create(**validated_data, **resolved)
+        device = Device.objects.create(**validated_data, **resolved)
+        if notes:
+            device.device_notes.create(position=0, text=notes)
+        return device
 
     def update(self, instance, validated_data):
+        validated_data.pop("notes", None)  # unreachable past validate(); belt and braces
         for field, obj in self._resolve_lookups(validated_data).items():
             setattr(instance, field, obj)
         return super().update(instance, validated_data)
@@ -195,14 +240,18 @@ class DeviceBulkCreateSerializer(serializers.Serializer):
     def create(self, validated_data):
         name = validated_data["location"].strip()
         location = Location.objects.get_or_create(name=name)[0] if name else None
-        return [
+        notes = validated_data["notes"].strip()
+        devices = [
             Device.objects.create(
                 purchase=validated_data["purchase"],
                 reference=line["reference"],
                 location=location,
-                notes=validated_data["notes"],
                 status=validated_data["status"],
             )
             for line in validated_data["lines"]
             for _ in range(line["quantity"])
         ]
+        if notes:
+            for device in devices:
+                device.device_notes.create(position=0, text=notes)
+        return devices

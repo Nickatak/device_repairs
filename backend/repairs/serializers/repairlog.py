@@ -28,7 +28,7 @@ class MediaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Media
-        fields = ["id", "image", "caption", "note", "repair", "taken_at", "created_at"]
+        fields = ["id", "image", "caption", "note", "repair", "device_note", "taken_at", "created_at"]
 
     def get_image(self, obj):
         return obj.image.url
@@ -152,21 +152,25 @@ class MediaWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Media
-        fields = ["id", "image", "caption", "note", "repair"]
+        fields = ["id", "image", "caption", "note", "repair", "device_note"]
 
     def validate(self, attrs):
         if self.instance and "image" in attrs:
             raise serializers.ValidationError(
                 "The image file is immutable — upload a new photo instead."
             )
-        note = attrs.get("note") if "note" in attrs else getattr(self.instance, "note", None)
-        repair = attrs.get("repair") if "repair" in attrs else getattr(self.instance, "repair", None)
-        if bool(note) == bool(repair):
+
+        def resolve(field):
+            return attrs[field] if field in attrs else getattr(self.instance, field, None)
+
+        note, repair, device_note = resolve("note"), resolve("repair"), resolve("device_note")
+        if sum(1 for parent in (note, repair, device_note) if parent) != 1:
             raise serializers.ValidationError(
-                "Media attaches to exactly one of: a note OR a repair."
+                "Media attaches to exactly one of: a note, a repair, OR a device note."
             )
-        owner = repair or note.repair
-        if owner.completed_at:
+        # The freeze guards the repair log; device notes never freeze.
+        owner = repair or (note.repair if note else None)
+        if owner and owner.completed_at:
             raise serializers.ValidationError(COMPLETED_REPAIR_ERROR)
         return attrs
 

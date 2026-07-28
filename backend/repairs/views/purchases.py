@@ -52,7 +52,9 @@ class PurchaseArriveView(APIView):
         purchase = get_object_or_404(Purchase, pk=pk)
         purchase.arrived_on = request.data.get("date") or timezone.localdate()
         purchase.save(update_fields=["arrived_on"])
+        # Queryset update bypasses save(), so stamp touched_at explicitly —
+        # the arrival flip is an edit like any other.
         flipped = purchase.devices.filter(status=Device.Status.SHIPPED).update(
-            status=Device.Status.ACQUIRED
+            status=Device.Status.ACQUIRED, touched_at=timezone.now()
         )
         return Response({"arrived_on": str(purchase.arrived_on), "units_acquired": flipped})

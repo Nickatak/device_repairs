@@ -102,7 +102,8 @@ class BulkAddTests(TestCase):
         for device in devices:
             self.assertEqual(device.reference, ref)
             self.assertEqual(device.location.name, "Shelf 2")
-            self.assertEqual(device.notes, "from the 3x lot")
+            # Shared bulk notes land as each unit's first chunk.
+            self.assertEqual(device.device_notes.get().text, "from the 3x lot")
             self.assertEqual(device.status, "shipped")  # default
         self.assertEqual(purchase.unit_price, Decimal("10.00"))
 

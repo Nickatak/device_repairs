@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { DeviceDetail as DeviceDetailT } from "@/lib/api/inventory";
-import { bandClass, formatPrice } from "@/lib/format";
+import { bandClass, formatDateTime, formatPrice } from "@/lib/format";
 import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
 
 function Field({ label, value }: { label: string; value: string | null }) {
@@ -75,13 +75,8 @@ export default function DeviceCard({
           </dd>
         </div>
         <Field label="Repairs" value={String(device.repairs.length)} />
+        <Field label="Edited" value={formatDateTime(device.touched_at)} />
       </dl>
-      {device.notes && (
-        <div className="card-notes">
-          <dt>Notes</dt>
-          <dd>{device.notes}</dd>
-        </div>
-      )}
     </section>
   );
 }

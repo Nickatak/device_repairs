@@ -11,6 +11,8 @@ export interface DeviceWrite {
   serial: string;
   location: string;
   purchase: number | null;
+  // Create-only: spawns the device's first note chunk. Edits go through
+  // the device-note actions — the backend 400s a PATCH that sends notes.
   notes: string;
   status: string;
   cost_override: string | null;
@@ -52,7 +54,9 @@ export async function updateDevice(
   id: number,
   data: DeviceWrite,
 ): Promise<WriteResult> {
-  return send(`${API_BASE}/inventory/${id}/`, "PATCH", data, "/");
+  const fields: Partial<DeviceWrite> = { ...data };
+  delete fields.notes;
+  return send(`${API_BASE}/inventory/${id}/`, "PATCH", fields, "/");
 }
 
 export async function createDevice(data: DeviceWrite): Promise<WriteResult> {
@@ -237,6 +241,32 @@ export async function updateNote(
   return send(`${API_BASE}/notes/${noteId}/`, "PATCH", data, `/devices/${deviceId}`);
 }
 
+export interface DeviceNoteWrite {
+  position: number;
+  title: string;
+  text: string;
+}
+
+export async function createDeviceNote(
+  deviceId: number,
+  data: DeviceNoteWrite,
+): Promise<WriteResult> {
+  return send(
+    `${API_BASE}/device-notes/`,
+    "POST",
+    { device: deviceId, ...data },
+    `/devices/${deviceId}`,
+  );
+}
+
+export async function updateDeviceNote(
+  deviceId: number,
+  noteId: number,
+  data: DeviceNoteWrite,
+): Promise<WriteResult> {
+  return send(`${API_BASE}/device-notes/${noteId}/`, "PATCH", data, `/devices/${deviceId}`);
+}
+
 export interface MeasurementWrite {
   what: string;
   value: string;
@@ -272,9 +302,10 @@ export async function updateMeasurement(
 // Photo upload: forwards the browser's files to the backend as one multipart
 // POST per file (Media = one image per row). GPS-strip + EXIF taken_at happen
 // backend-side. `formData` carries `files` entries from the note's file input.
-export async function uploadNoteMedia(
+async function uploadMedia(
   deviceId: number,
-  noteId: number,
+  parentField: "note" | "device_note",
+  parentId: number,
   formData: FormData,
 ): Promise<WriteResult> {
   const files = formData.getAll("files") as File[];
@@ -282,7 +313,7 @@ export async function uploadNoteMedia(
 
   for (const file of files) {
     const body = new FormData();
-    body.append("note", String(noteId));
+    body.append(parentField, String(parentId));
     body.append("image", file);
     let res: Response;
     try {
@@ -298,4 +329,20 @@ export async function uploadNoteMedia(
 
   revalidatePath(`/devices/${deviceId}`);
   return { ok: true };
+}
+
+export async function uploadNoteMedia(
+  deviceId: number,
+  noteId: number,
+  formData: FormData,
+): Promise<WriteResult> {
+  return uploadMedia(deviceId, "note", noteId, formData);
+}
+
+export async function uploadDeviceNoteMedia(
+  deviceId: number,
+  deviceNoteId: number,
+  formData: FormData,
+): Promise<WriteResult> {
+  return uploadMedia(deviceId, "device_note", deviceNoteId, formData);
 }

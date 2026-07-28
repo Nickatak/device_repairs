@@ -10,6 +10,7 @@ import type { Note } from "@/lib/api/repairlog";
 import { formatDateTime } from "@/lib/format";
 import DeviceCard from "./DeviceCard";
 import DeviceCardEdit from "./DeviceCardEdit";
+import DeviceNotes from "./DeviceNotes";
 import Exits from "./Exits";
 import NoteModal, { type NoteModalState } from "./NoteModal";
 import NoteRow from "./NoteRow";
@@ -66,6 +67,8 @@ export default function DeviceDetail({
       ) : (
         <DeviceCard device={device} onEdit={() => setEditing(true)} />
       )}
+
+      <DeviceNotes deviceId={device.id} notes={device.device_notes} />
 
       <div className="repairs-head">
         <h2>Bench log</h2>

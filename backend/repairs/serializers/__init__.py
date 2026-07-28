@@ -12,6 +12,8 @@ from .exits import ExitSerializer, ExitWriteSerializer
 from .inventory import (
     DeviceBulkCreateSerializer,
     DeviceDetailSerializer,
+    DeviceNoteSerializer,
+    DeviceNoteWriteSerializer,
     DeviceWriteSerializer,
     InventoryDeviceSerializer,
 )
@@ -59,6 +61,8 @@ __all__ = [
     "CompPullSerializer",
     "DeviceBulkCreateSerializer",
     "DeviceDetailSerializer",
+    "DeviceNoteSerializer",
+    "DeviceNoteWriteSerializer",
     "DeviceReferenceSerializer",
     "DeviceWriteSerializer",
     "ExitSerializer",
