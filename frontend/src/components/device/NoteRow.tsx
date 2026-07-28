@@ -92,6 +92,9 @@ export default function NoteRow({
         <div className="note-body">
           <div className="note-head">
             {note.title && <span className="note-title">{note.title}</span>}
+            <span className="note-date" title={`created ${formatDateTime(note.created_at)}`}>
+              {formatDateTime(note.updated_at)}
+            </span>
           </div>
           {note.text && <div className="note-text">{note.text}</div>}
           {note.comment && <div className="note-comment">{note.comment}</div>}

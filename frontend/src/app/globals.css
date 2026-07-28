@@ -979,6 +979,15 @@ button.phase-note.add {
 .phase-row.clickable:hover {
   background: color-mix(in srgb, var(--border) 35%, transparent);
 }
+.phase-latest-note {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
 .note-count {
   flex: 0 0 auto;
   min-width: 18px;

@@ -146,6 +146,8 @@ class Note(models.Model):
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     comment = models.TextField(blank=True, help_text="Note-scoped side commentary.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["position", "id"]

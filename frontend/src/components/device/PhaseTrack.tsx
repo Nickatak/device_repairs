@@ -77,6 +77,10 @@ export default function PhaseTrack({
         // On a completed repair, an unchecked phase demonstrably did NOT happen.
         const skipped = completed && !doneAt;
         const phaseNotes = repair.notes.filter((n) => n.phase === key);
+        const latest = phaseNotes.reduce<Note | null>(
+          (best, n) => (!best || n.updated_at > best.updated_at ? n : best),
+          null,
+        );
         const open = expanded.has(key);
         return (
           <div key={key} className={`phase-section${open ? " open" : ""}`}>
@@ -119,6 +123,15 @@ export default function PhaseTrack({
               <span className="phase-date">
                 {doneAt ? formatDateTime(doneAt) : skipped ? "not performed" : ""}
               </span>
+              {latest && (
+                <span
+                  className="phase-latest-note"
+                  title={`Most recent note — edited ${formatDateTime(latest.updated_at)}`}
+                >
+                  {latest.title || latest.text.slice(0, 40) || "untitled"} ·{" "}
+                  {formatDateTime(latest.updated_at)}
+                </span>
+              )}
               {editing ? (
                 <span className="phase-note-edit">
                   <textarea

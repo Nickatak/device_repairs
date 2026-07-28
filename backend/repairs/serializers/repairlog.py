@@ -59,6 +59,8 @@ class NoteSerializer(serializers.ModelSerializer):
             "text",
             "comment",
             "parent",
+            "created_at",
+            "updated_at",
             "measurements",
             "media",
             "subnotes",

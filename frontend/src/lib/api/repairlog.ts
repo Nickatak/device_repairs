@@ -30,6 +30,8 @@ export interface Note {
   text: string;
   comment: string;
   parent: number | null;
+  created_at: string;
+  updated_at: string;
   measurements: Measurement[];
   media: MediaItem[];
   subnotes: Note[];
