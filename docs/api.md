@@ -183,6 +183,22 @@ no-battery boot loop, an ID tell, an open question resolved):
 - Unit-grain observations ("THIS unit boot-loops") stay bench notes on the
   repair; only rev-wide knowledge goes here.
 
+## Recipe: note templates (config, NOT ledger)
+
+One prefill per (catalog model × phase) — what the add-note modal offers
+("Hall Mod" on the DS4 hall class × Repair). Authoring lives at
+`http://repairs.home.arpa/templates`; API:
+
+- `GET /templates/` (optional `?reference=<id>`) · `POST /templates/` with
+  nested `entries` (each: `position`, `title`, `text`, `measurements` of
+  `{position, what, expected}`). One per (reference, phase) — a second 400s.
+- `PATCH /templates/<id>/` — nested `entries` REPLACE the existing set.
+- `DELETE /templates/<id>/` — the ONE delete in the API: templates are
+  config; notes already spawned from one are untouched.
+- Applying a template is nothing special server-side: the modal just POSTs
+  plain notes (with nested measurements) — the log never references the
+  template.
+
 ## Recipe: a unit left (sold / gifted / scrapped…)
 
 `POST /exits/`
@@ -213,14 +229,18 @@ Usually Nick works this through the UI; use the API when he narrates work to
 record.
 
 1. `POST /repairs/` `{"device": 101}` — bench work started. Every new repair
-   auto-creates a position-0 "Measurements" note (the bucket for readings tied
-   to no specific notation).
+   auto-creates a position-0 "Measurements" note on the Diagnostics phase
+   (the bucket for readings tied to no specific notation).
 2. Phase track: `PATCH /repairs/<id>/` with any of
-   `{teardown,wash,repair,reassemble,verify}_done_at` (datetime) and
-   `..._note` (deviations only — the routine isn't logged).
-3. Notes: `POST /notes/` `{"repair": 7, "position": 1, "title": "...",
-   "text": "..."}`; sub-notes via `parent` (one level deep max).
-   `PATCH /notes/<id>/` to edit.
+   `{intake,teardown,diagnostics,repair,wash,reassemble,verify}_done_at`
+   (datetime) and `..._note` (deviations only — the routine isn't logged).
+3. Notes are PER-PHASE (2026-07-28): `POST /notes/` `{"repair": 7,
+   "phase": "diagnostics", "position": 1, "title": "...", "text": "..."}` —
+   `phase` is REQUIRED on create; sub-notes via `parent` (one level deep max,
+   they inherit the parent's phase). Optional create-only `measurements`
+   array (`[{"what": "1.1V rail", "value": "1.09 V"}]`) lands rows on the new
+   note in one request. `PATCH /notes/<id>/` to edit (no nested measurements
+   on edit — use `/measurements/`).
 4. Measurements: `POST /measurements/` `{"note": 55, "what": "5V rail",
    "value": "4.98V", "comment": ""}`.
 5. Done: `PATCH /repairs/<id>/` `{"completed_at": "..."}` — **manual and
@@ -277,7 +297,8 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 | POST `/exits/` | Record a departure (flips device to exited) |
 | PATCH `/exits/<id>/` | Correct an exit |
 | POST `/repairs/` · PATCH `/repairs/<id>/` | Start repair · phase track/completion |
-| POST `/notes/` · PATCH `/notes/<id>/` | Bench notes (one-level nesting) |
+| POST `/notes/` · PATCH `/notes/<id>/` | Bench notes — per-phase, `phase` required on create (one-level nesting; create-only nested `measurements`) |
+| GET/POST `/templates/` · GET/PATCH/DELETE `/templates/<id>/` | Note templates per (model × phase) — config, deletable |
 | POST `/measurements/` · PATCH `/measurements/<id>/` | Readings on a note |
 | POST `/media/` · PATCH `/media/<id>/` | Photo upload (multipart, parent = note/repair/device_note; GPS-stripped, EXIF taken_at) · caption/reparent |
 | GET/POST `/stock/` | Buckets with live counts / mint a SKU |
