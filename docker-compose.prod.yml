@@ -1,7 +1,11 @@
 # Production overrides — dock01 only. Activate by symlinking:
 #   ln -s docker-compose.prod.yml docker-compose.override.yml
-# (compose auto-loads the override; local dev never creates the symlink and
-# keeps the base file's hot-reload commands.)
+# (compose auto-loads the override, so a bare `docker compose up -d` is always
+# complete — no -f stacking to forget. Local dev symlinks docker-compose.local.yml
+# instead.)
+#
+# Subsumes docker-compose.homelab.yml (2026-07-29): carries the published ports
+# itself so dropping the -f chain can't silently unpublish them.
 #
 # What changes vs dev: gunicorn instead of runserver, collectstatic on boot
 # (urls.py serves static/media itself in prod — LAN-internal, no proxy tier),
@@ -9,6 +13,8 @@
 # .env (False in .env.prod).
 services:
   backend:
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     command: >-
       sh -c "pip install --no-cache-dir -r requirements.txt &&
       python manage.py migrate &&
@@ -16,6 +22,8 @@ services:
       gunicorn config.wsgi:application -b 0.0.0.0:8000 --workers 2 --threads 4"
 
   frontend:
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
     command: >-

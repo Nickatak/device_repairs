@@ -1,9 +1,9 @@
-# Homelab overlay (dock01). Publishes the browser-facing frontend port for
-# Caddy (repairs.home.arpa -> host:3000) and the back-of-house Django port
-# for direct LAN access to /admin and the API. Postgres stays compose-internal
-# — psql via `docker compose exec db`.
-#
-# Usage: docker compose -f docker-compose.yml -f docker-compose.homelab.yml up -d
+# SUPERSEDED 2026-07-29 — dock01 runs docker-compose.prod.yml (symlinked as
+# docker-compose.override.yml), which carries these ports itself plus the prod
+# commands. The -f stacking this file needed was a footgun: a bare
+# `docker compose up` silently unpublished the ports. Kept only for running
+# dock01 in DEV mode with ports:
+#   docker compose -f docker-compose.yml -f docker-compose.homelab.yml up -d
 services:
   backend:
     ports:
