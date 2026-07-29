@@ -50,7 +50,9 @@ export interface NoteTemplateEntry {
   id: number;
   position: number;
   title: string;
+  // text = real prefill (lands in the note); placeholder = ghost hint only.
   text: string;
+  placeholder: string;
   measurements: NoteTemplateMeasurement[];
 }
 

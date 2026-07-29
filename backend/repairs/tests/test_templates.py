@@ -119,6 +119,26 @@ class NoteTemplateTests(TestCase):
         self.assertEqual(len(body["entries"][0]["measurements"]), 3)
         self.assertEqual(body["entries"][0]["measurements"][1]["expected"], "1.8")
 
+    def test_entry_placeholder_round_trip(self):
+        # text = real prefill; placeholder = ghost hint that never enters a note.
+        res = self.client.post(
+            "/api/v1/templates/",
+            {
+                "reference": self.ref.pk,
+                "phase": "intake",
+                "name": "Rev read",
+                "entries": [
+                    {"position": 0, "title": "Board Revision", "text": "",
+                     "placeholder": "JDM-XXX", "measurements": []}
+                ],
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(res.status_code, 201, res.content)
+        body = self.client.get(f"/api/v1/templates/{res.json()['id']}/").json()
+        self.assertEqual(body["entries"][0]["placeholder"], "JDM-XXX")
+        self.assertEqual(body["entries"][0]["text"], "")
+
     def test_one_template_per_reference_per_phase(self):
         self.assertEqual(self.make_template().status_code, 201)
         res = self.make_template()

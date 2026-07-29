@@ -181,7 +181,7 @@ class NoteTemplateEntrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NoteTemplateEntry
-        fields = ["id", "position", "title", "text", "measurements"]
+        fields = ["id", "position", "title", "text", "placeholder", "measurements"]
 
 
 class NoteTemplateSerializer(serializers.ModelSerializer):

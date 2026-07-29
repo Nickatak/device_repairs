@@ -24,6 +24,7 @@ interface MeasurementDraft {
 interface EntryDraft {
   title: string;
   text: string;
+  placeholder: string;
   measurements: MeasurementDraft[];
 }
 
@@ -40,7 +41,7 @@ const EMPTY_DRAFT: Draft = {
   reference: null,
   phase: "diagnostics",
   name: "",
-  entries: [{ title: "", text: "", measurements: [] }],
+  entries: [{ title: "", text: "", placeholder: "", measurements: [] }],
 };
 
 function draftFrom(template: NoteTemplate): Draft {
@@ -52,6 +53,7 @@ function draftFrom(template: NoteTemplate): Draft {
     entries: template.entries.map((e) => ({
       title: e.title,
       text: e.text,
+      placeholder: e.placeholder,
       measurements: e.measurements.map((m) => ({ what: m.what, expected: m.expected })),
     })),
   };
@@ -134,11 +136,12 @@ export default function TemplatesView({
       phase: draft.phase,
       name: draft.name,
       entries: draft.entries
-        .filter((entry) => entry.title.trim() || entry.text.trim() || entry.measurements.length)
+        .filter((entry) => entry.title.trim() || entry.text.trim() || entry.placeholder.trim() || entry.measurements.length)
         .map((entry, i) => ({
           position: i,
           title: entry.title,
           text: entry.text,
+          placeholder: entry.placeholder,
           measurements: entry.measurements
             .filter((m) => m.what.trim())
             .map((m, mi) => ({ position: mi, what: m.what, expected: m.expected })),
@@ -300,11 +303,19 @@ export default function TemplatesView({
                   </button>
                 </div>
                 <label>
-                  Prefilled text
+                  Prefilled text (lands in the note)
                   <textarea
                     rows={2}
                     value={entry.text}
                     onChange={(e) => patchEntry(i, { text: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Placeholder (ghost hint only)
+                  <input
+                    placeholder="JDM-XXX"
+                    value={entry.placeholder}
+                    onChange={(e) => patchEntry(i, { placeholder: e.target.value })}
                   />
                 </label>
                 {entry.measurements.map((m, mi) => (
@@ -362,7 +373,7 @@ export default function TemplatesView({
                 className="btn-edit"
                 onClick={() =>
                   patchDraft({
-                    entries: [...draft.entries, { title: "", text: "", measurements: [] }],
+                    entries: [...draft.entries, { title: "", text: "", placeholder: "", measurements: [] }],
                   })
                 }
               >

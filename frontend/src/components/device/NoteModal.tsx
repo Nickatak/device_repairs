@@ -35,6 +35,7 @@ function phaseLabel(key: PhaseKey): string {
 interface EntryDraft {
   title: string;
   text: string;
+  placeholder: string;
   measurements: { what: string; expected: string; value: string }[];
 }
 
@@ -42,6 +43,7 @@ function draftsFromTemplate(template: NoteTemplate): EntryDraft[] {
   return template.entries.map((entry) => ({
     title: entry.title,
     text: entry.text,
+    placeholder: entry.placeholder,
     measurements: entry.measurements.map((m) => ({
       what: m.what,
       expected: m.expected,
@@ -219,6 +221,7 @@ export default function NoteModal({
                   <textarea
                     rows={2}
                     value={draft.text}
+                    placeholder={draft.placeholder || undefined}
                     onChange={(e) => setDraft(i, { text: e.target.value })}
                   />
                 </label>

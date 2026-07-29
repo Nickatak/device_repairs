@@ -254,12 +254,22 @@ class NoteTemplate(models.Model):
 
 
 class NoteTemplateEntry(models.Model):
-    """One prefilled note field within a template ('L hall module')."""
+    """One prefilled note field within a template ('L hall module').
+
+    `text` vs `placeholder` (2026-07-29): text is a real prefill — it lands in
+    the note as typed ('JDM-055' for a fleet of known units); placeholder is a
+    ghost hint on the empty field ('JDM-XXX') and never enters the note.
+    """
 
     template = models.ForeignKey(NoteTemplate, on_delete=models.CASCADE, related_name="entries")
     position = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=255, blank=True, help_text="Prefilled note title.")
     text = models.TextField(blank=True, help_text="Prefilled note body, editable in the modal.")
+    placeholder = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Ghost hint shown on the empty text field ('JDM-XXX') — never lands in the note.",
+    )
 
     class Meta:
         ordering = ["position", "id"]

@@ -256,6 +256,7 @@ export interface TemplateEntryWrite {
   position: number;
   title: string;
   text: string;
+  placeholder: string;
   measurements: TemplateMeasurementWrite[];
 }
 
