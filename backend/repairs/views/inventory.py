@@ -1,6 +1,12 @@
 """Inventory endpoints — device list/create, device detail, device notes, bulk add."""
 
-from rest_framework.generics import CreateAPIView, ListCreateAPIView, RetrieveUpdateAPIView, UpdateAPIView
+from rest_framework.exceptions import ValidationError
+from rest_framework.generics import (
+    CreateAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -54,17 +60,32 @@ class DeviceDetailView(RetrieveUpdateAPIView):
 
 
 class DeviceNoteCreateView(CreateAPIView):
-    """POST a new device-note chunk (unit-grain fact). No delete path by design."""
+    """POST a new device-note chunk (unit-grain fact)."""
 
     serializer_class = DeviceNoteWriteSerializer
     queryset = DeviceNote.objects.all()
 
 
-class DeviceNoteUpdateView(UpdateAPIView):
-    """PATCH an existing device-note chunk. No delete path by design."""
+class DeviceNoteUpdateView(RetrieveUpdateDestroyAPIView):
+    """PATCH / DELETE an existing device-note chunk.
+
+    Deletable since 2026-07-29 (Nick's prune call) — the second deliberate
+    exception to the no-delete rule after templates: chunks are a working
+    surface that accumulates jam, not the repair log. Guard: a chunk carrying
+    photos refuses deletion (media would cascade) — strip or reparent first.
+    """
 
     serializer_class = DeviceNoteWriteSerializer
     queryset = DeviceNote.objects.all()
+
+    def perform_destroy(self, instance):
+        if instance.media.exists():
+            raise ValidationError(
+                "Chunk carries photos — reparent or re-caption them first; media never deletes silently."
+            )
+        device_id = instance.device_id
+        instance.delete()
+        Device.touch(device_id)
 
 
 class DeviceBulkCreateView(APIView):

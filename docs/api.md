@@ -132,8 +132,10 @@ observations still belong on a Repair's notes.
 - **Add a chunk**: `POST /device-notes/` `{"device": 147, "position": 1,
   "title": "", "text": "rev read: JDM-055"}`. `position` orders the page
   (ties resolve by id, so equal positions read in creation order).
-- **Edit a chunk**: `PATCH /device-notes/<id>/` (partial). No DELETE, as
-  everywhere.
+- **Edit a chunk**: `PATCH /device-notes/<id>/` (partial).
+- **Delete a chunk**: `DELETE /device-notes/<id>/` (since 2026-07-29 — the
+  second no-delete exception after templates; chunks are a working surface).
+  A chunk carrying photos 400s: reparent the media first, never cascade.
 - **Photos** attach per chunk: `POST /media/` multipart with `device_note=<id>`
   (instead of `note`/`repair`). This is the home for intake/listing shots that
   predate any repair; the completed-repair freeze never applies here.
@@ -290,7 +292,7 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 | POST `/inventory/` | Create one device (`reference`, `serial`, `location`, `purchase`, `status`, `cost_override`; `notes` spawns the first chunk) |
 | POST `/inventory/bulk/` | Spawn N devices from one purchase (lines) |
 | GET/PATCH `/inventory/<id>/` | Device detail (repairs, device_notes, exits nested) / edit device fields |
-| POST `/device-notes/` · PATCH `/device-notes/<id>/` | Unit-fact chunks on a device (add / edit, no delete) |
+| POST `/device-notes/` · PATCH/DELETE `/device-notes/<id>/` | Unit-fact chunks on a device (delete refuses photo-carrying chunks) |
 | GET `/purchases/` | Buy events, newest first |
 | POST `/purchases/` | Record a purchase |
 | GET/PATCH `/purchases/<id>/` | Purchase + its `devices` array / edit purchase fields |

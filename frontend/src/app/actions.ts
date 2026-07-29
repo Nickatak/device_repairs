@@ -317,6 +317,25 @@ export async function updateDeviceNote(
   return send(`${API_BASE}/device-notes/${noteId}/`, "PATCH", data, `/devices/${deviceId}`);
 }
 
+// The second no-delete exception (after templates): chunks are a working
+// surface. The backend refuses chunks that carry photos.
+export async function deleteDeviceNote(
+  deviceId: number,
+  noteId: number,
+): Promise<WriteResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/device-notes/${noteId}/`, { method: "DELETE" });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Network error" };
+  }
+  if (!res.ok) {
+    return { ok: false, error: `${res.status}: ${(await res.text()).slice(0, 300)}` };
+  }
+  revalidatePath(`/devices/${deviceId}`);
+  return { ok: true };
+}
+
 export interface MeasurementWrite {
   what: string;
   value: string;

@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createDeviceNote,
+  deleteDeviceNote,
   updateDeviceNote,
   uploadDeviceNoteMedia,
 } from "@/app/actions";
@@ -104,6 +105,28 @@ function DeviceNoteModal({
         {error && <p className="error">{error}</p>}
 
         <div className="modal-actions">
+          {isEdit && (
+            <button
+              type="button"
+              className="btn-secondary template-delete"
+              disabled={pending}
+              onClick={() => {
+                if (state.mode !== "edit") return;
+                if (!window.confirm("Delete this unit note? (Refused if it carries photos.)")) return;
+                startTransition(async () => {
+                  const result = await deleteDeviceNote(deviceId, state.note.id);
+                  if (result.ok) {
+                    router.refresh();
+                    onClose();
+                  } else {
+                    setError(result.error);
+                  }
+                });
+              }}
+            >
+              Delete
+            </button>
+          )}
           <button
             type="button"
             className="btn-secondary"

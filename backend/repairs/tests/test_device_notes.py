@@ -55,10 +55,25 @@ class DeviceNoteApiTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(DeviceNote.objects.get(pk=chunk_id).text, "rev read: JDM-055")
 
-    def test_no_delete_route(self):
-        chunk_id = self.post_chunk(text="permanent").json()["id"]
+    def test_delete_chunk(self):
+        # Deletable since 2026-07-29 — chunks are a working surface, not the log.
+        chunk_id = self.post_chunk(text="jam").json()["id"]
         res = self.client.delete(f"/api/v1/device-notes/{chunk_id}/")
-        self.assertEqual(res.status_code, 405)
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(self.device.device_notes.count(), 0)
+
+    def test_delete_refuses_chunk_with_photos(self):
+        import io
+
+        from .test_media import make_jpeg
+
+        chunk_id = self.post_chunk(text="has photos").json()["id"]
+        image = io.BytesIO(make_jpeg())
+        image.name = "keep.jpg"
+        self.client.post("/api/v1/media/", {"image": image, "device_note": chunk_id})
+        res = self.client.delete(f"/api/v1/device-notes/{chunk_id}/")
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(self.device.device_notes.count(), 1)
 
     def test_device_create_notes_spawns_first_chunk(self):
         res = self.client.post(
