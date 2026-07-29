@@ -10,6 +10,11 @@ predict, the source under `backend/repairs/` wins.
 - **Canonical instance: `http://10.20.0.110:8000/api/v1/`** (dock01, LAN-direct
   to Django). The site at `http://repairs.home.arpa` is the same DB's frontend —
   use it to eyeball results, not for API calls (Caddy only proxies the frontend).
+- **dock01 is the SOLE canonical surface (2026-07-28; dual-write retired).**
+  The localhost dev instance (`http://localhost:8001/api/v1/`) holds the real
+  catalog but a fake TEST-labeled ledger — never record real data there. Reset
+  it anytime with `manage.py seed_dev` (guarded: refuses to run over real data,
+  so it's inert on dock01).
 - No auth (LAN-only, deliberate for now). JSON in/out; send
   `Content-Type: application/json`. **Trailing slashes required.**
 - The site DB is the canonical device ledger (since 2026-07-21). The old
