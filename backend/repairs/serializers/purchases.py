@@ -10,7 +10,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
 
     source = serializers.StringRelatedField()
     unit_price = serializers.SerializerMethodField()
-    device_count = serializers.IntegerField(source="devices.count", read_only=True)
+    device_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Purchase
@@ -35,6 +35,10 @@ class PurchaseSerializer(serializers.ModelSerializer):
     def get_unit_price(self, obj) -> str | None:
         price = obj.unit_price
         return str(price) if price is not None else None
+
+    def get_device_count(self, obj) -> int:
+        # len(.all()) rides the view's prefetch cache; .count() re-queries.
+        return len(obj.devices.all())
 
 
 class PurchaseUnitSerializer(serializers.ModelSerializer):

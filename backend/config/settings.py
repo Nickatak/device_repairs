@@ -27,15 +27,19 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# Security hardening — only active in production (behind a reverse proxy).
-if not DEBUG:
+# HTTPS-only hardening, gated on its own flag: dock01 runs DEBUG=False on
+# plain-HTTP LAN, where Secure cookies would silently break admin logins and
+# HSTS would poison the hostname. Set DJANGO_HTTPS=true only behind real TLS.
+if os.getenv("DJANGO_HTTPS", "false").lower() == "true":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+if not DEBUG:
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
     # Fail fast if dangerous dev defaults slipped into production.
     _prod_checks = []
@@ -146,6 +150,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # collectstatic target; served by urls.py in prod
 
 # User-uploaded repair/step photos (the Media model).
 MEDIA_ROOT = BASE_DIR / "media"

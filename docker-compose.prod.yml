@@ -1,0 +1,23 @@
+# Production overrides — dock01 only. Activate by symlinking:
+#   ln -s docker-compose.prod.yml docker-compose.override.yml
+# (compose auto-loads the override; local dev never creates the symlink and
+# keeps the base file's hot-reload commands.)
+#
+# What changes vs dev: gunicorn instead of runserver, collectstatic on boot
+# (urls.py serves static/media itself in prod — LAN-internal, no proxy tier),
+# and a real `next build` instead of the dev compiler. DJANGO_DEBUG comes from
+# .env (False in .env.prod).
+services:
+  backend:
+    command: >-
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn config.wsgi:application -b 0.0.0.0:8000 --workers 2 --threads 4"
+
+  frontend:
+    environment:
+      NODE_ENV: production
+    command: >-
+      sh -c "npm install && npm run build &&
+      npx next start -H 0.0.0.0 -p 3000"

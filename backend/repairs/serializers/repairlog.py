@@ -95,7 +95,9 @@ class RepairWithNotesSerializer(serializers.ModelSerializer):
         fields = ["id", "current_phase", "created_at", "completed_at", "comment", "notes", "media", *PHASE_FIELDS]
 
     def get_notes(self, obj):
-        top_level = obj.notes.filter(parent__isnull=True)
+        # Python-side filter so the view's prefetch cache is used — .filter()
+        # would bypass it and re-query per repair.
+        top_level = [n for n in obj.notes.all() if n.parent_id is None]
         return NoteSerializer(top_level, many=True).data
 
 

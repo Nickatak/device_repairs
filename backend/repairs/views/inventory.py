@@ -24,8 +24,12 @@ class InventoryListView(ListCreateAPIView):
     """GET = all devices on hand with current status; POST = create a device."""
 
     queryset = (
-        Device.objects.select_related("purchase__source", "location", "reference")
-        .prefetch_related("repairs", "device_notes")
+        Device.objects.select_related(
+            "purchase__source", "location", "reference", "revision"
+        )
+        # purchase__devices backs unit_price's override math — without it every
+        # row re-queries its lot's siblings (the N+1 found 2026-07-29).
+        .prefetch_related("repairs", "device_notes", "purchase__devices")
         .order_by("reference__brand", "reference__name", "id")
     )
 
@@ -41,13 +45,19 @@ class DeviceDetailView(RetrieveUpdateAPIView):
     """GET a single device with its repairs + steps; PATCH its own fields."""
 
     queryset = Device.objects.select_related(
-        "purchase__source", "location", "reference", "reference__lane"
+        "purchase__source", "location", "reference", "reference__lane", "revision"
     ).prefetch_related(
         "repairs__notes__measurements",
+        "repairs__notes__media",
         "repairs__notes__subnotes__measurements",
+        "repairs__notes__subnotes__media",
+        "repairs__media",
         "device_notes__media",
+        "exits",
+        "purchase__devices",
         "reference__issues",
         "reference__variants",
+        "reference__revisions",
         "reference__comp_pulls__variant",
     )
 

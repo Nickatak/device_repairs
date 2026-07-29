@@ -39,3 +39,5 @@ backend/repairs/data/price_sheet_seed.json
 backend/repairs/data/parts_seed.json
 backend/repairs/data/stock_seed.json
 backups/
+docker-compose.override.yml
+backend/staticfiles/
