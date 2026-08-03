@@ -42,12 +42,14 @@ function latestWorking(item: ReferenceItem): CompPull | null {
   );
 }
 
-type SortKey = "model" | "lane" | "stop" | "comp" | "pulled";
+type SortKey = "model" | "year" | "lane" | "stop" | "comp" | "pulled";
 
 function sortValue(item: ReferenceItem, key: SortKey): string | number | null {
   switch (key) {
     case "model":
       return item.brand ? `${item.brand} ${item.name}` : item.name;
+    case "year":
+      return item.release_year;
     case "lane":
       return item.lane;
     case "stop":
@@ -363,6 +365,7 @@ export default function ReferenceView({
               <thead>
                 <tr>
                   <SortTh label="Model" k="model" sort={sort} onToggle={toggle} />
+                  <SortTh label="Year" k="year" sort={sort} onToggle={toggle} />
                   <SortTh label="Lane" k="lane" sort={sort} onToggle={toggle} />
                   <SortTh label="Stop" k="stop" sort={sort} onToggle={toggle} className="num" />
                   <SortTh label="Working comp" k="comp" sort={sort} onToggle={toggle} className="num" />
@@ -384,9 +387,6 @@ export default function ReferenceView({
                           {it.brand ? `${it.brand} ${it.name}` : it.name}
                         </div>
                         <div className="ref-sub">
-                          {it.release_year !== null && (
-                            <span className="ref-year">{it.release_year} </span>
-                          )}
                           {it.sku_prefix && (
                             <span className="ref-modelnum">{it.sku_prefix}</span>
                           )}
@@ -396,6 +396,7 @@ export default function ReferenceView({
                           )}
                         </div>
                       </td>
+                      <td className="ref-year">{it.release_year ?? "—"}</td>
                       <td>
                         <span className={laneBadgeClass(it.lane)}>{laneLabel(it.lane)}</span>
                       </td>
@@ -420,7 +421,7 @@ export default function ReferenceView({
                     </tr>,
                     expanded ? (
                       <tr key={`${it.id}-detail`} className="ref-expand">
-                        <td colSpan={5}>
+                        <td colSpan={6}>
                           <RefDevices devices={devicesByRef.get(it.id) ?? []} />
                           {it.revisions.length > 0 && <RevisionChips revisions={it.revisions} />}
                           {it.variants.length > 0 && <VariantChips variants={it.variants} />}
