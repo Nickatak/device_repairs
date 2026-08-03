@@ -384,6 +384,9 @@ export default function ReferenceView({
                           {it.brand ? `${it.brand} ${it.name}` : it.name}
                         </div>
                         <div className="ref-sub">
+                          {it.release_year !== null && (
+                            <span className="ref-year">{it.release_year} </span>
+                          )}
                           {it.sku_prefix && (
                             <span className="ref-modelnum">{it.sku_prefix}</span>
                           )}
