@@ -18,7 +18,7 @@ from .inventory import (
     InventoryListView,
 )
 from .options import OptionsView
-from .purchases import PurchaseArriveView, PurchaseDetailView, PurchaseListCreateView
+from .orders import OrderArriveView, OrderDetailView, OrderListCreateView
 from .reference import (
     LaneListView,
     ReferenceListView,
@@ -64,9 +64,9 @@ __all__ = [
     "NoteTemplateListCreateView",
     "NoteUpdateView",
     "OptionsView",
-    "PurchaseArriveView",
-    "PurchaseDetailView",
-    "PurchaseListCreateView",
+    "OrderArriveView",
+    "OrderDetailView",
+    "OrderListCreateView",
     "ReferenceListView",
     "RevisionCreateView",
     "RevisionUpdateView",

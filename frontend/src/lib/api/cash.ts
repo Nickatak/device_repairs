@@ -6,7 +6,7 @@ export interface CashSummary {
   money_out: string;
   money_in: string;
   net: string;
-  purchase_count: number;
+  order_count: number;
   exit_count: number;
 }
 

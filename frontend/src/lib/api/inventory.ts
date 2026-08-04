@@ -2,7 +2,7 @@
 
 import { API_BASE } from "./client";
 import type { Exit } from "./exits";
-import type { Purchase } from "./purchases";
+import type { Order } from "./orders";
 import type { ReferenceItem, Revision } from "./reference";
 import type { MediaItem, NoteTemplate, RepairWithNotes } from "./repairlog";
 
@@ -24,7 +24,7 @@ export interface InventoryItem {
   revision: Revision | null;
   serial: string;
   location: string | null;
-  purchase: Purchase | null;
+  order: Order | null;
   notes: string;
   status: string;
   status_display: string;
@@ -48,7 +48,7 @@ export interface DeviceDetail {
   ledger_ref: string;
   serial: string;
   location: string | null;
-  purchase: Purchase | null;
+  order: Order | null;
   device_notes: DeviceNote[];
   note_templates: NoteTemplate[];
   status: string;

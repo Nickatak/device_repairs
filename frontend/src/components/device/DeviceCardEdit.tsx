@@ -18,7 +18,7 @@ function asInventoryItem(device: DeviceDetailT): InventoryItem {
     revision: device.revision,
     serial: device.serial,
     location: device.location,
-    purchase: device.purchase,
+    order: device.order,
     notes: "", // chunked — the edit form no longer touches notes
     status: device.status,
     status_display: device.status_display,
@@ -66,7 +66,7 @@ export default function DeviceCardEdit({
           form={form}
           set={set}
           options={options}
-          currentPurchase={device.purchase?.id ?? null}
+          currentOrder={device.order?.id ?? null}
         />
 
         {error && <p className="error">{error}</p>}

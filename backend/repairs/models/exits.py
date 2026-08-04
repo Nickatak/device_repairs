@@ -1,6 +1,6 @@
-"""Exits — money leaves here. One row per departure event on a Device.
+"""Exits — money comes back here. One row per departure event on a Device.
 
-The money mirror of purchases.py: Purchase (money in) → Device → Exit (money out).
+The money mirror of orders.py: Order (money out) → Device → Exit (money in).
 A device usually exits once, but a return-then-resell is two events — that's why
 this is a model, not fields on Device. Creating an exit via the API also flips
 the device's lifecycle status to exited (mirrors the ledger rule: a unit exit =
@@ -45,7 +45,7 @@ class Exit(models.Model):
         blank=True,
         help_text=(
             "Who the unit went to — buyer, friend. Shares the counterparty pool "
-            "with Purchase.from_who."
+            "with Order.from_who."
         ),
     )
     note = models.TextField(blank=True)

@@ -26,7 +26,7 @@ from repairs.models import (
     DeviceNote,
     DeviceReference,
     Location,
-    Purchase,
+    Order,
     Source,
     StockIntake,
     StockItem,
@@ -52,11 +52,11 @@ class Command(BaseCommand):
     def _wipe(self):
         # Ledger only — catalog (references/revisions/lanes/issues) and note
         # templates survive. Device delete cascades repairs/notes/exits/media;
-        # purchase delete cascades stock intakes.
+        # order delete cascades stock intakes.
         Device.objects.all().delete()
         StockIntake.objects.all().delete()
         StockItem.objects.all().delete()
-        Purchase.objects.all().delete()
+        Order.objects.all().delete()
         CompPull.objects.all().delete()
         self.stdout.write("wiped TEST ledger")
 
@@ -69,29 +69,29 @@ class Command(BaseCommand):
         source, _ = Source.objects.get_or_create(name="TEST source")
         bench, _ = Location.objects.get_or_create(name="TEST bench")
 
-        lot = Purchase.objects.create(
-            kind=Purchase.Kind.DEVICE,
+        lot = Order.objects.create(
+            kind=Order.Kind.DEVICE,
             label="TEST lot — 4x DS4 (fake)",
             source=source,
             order_ref="TEST-ORDER-001",
             total_price=Decimal("40.00"),
-            purchased_on=date(2026, 1, 1),
+            ordered_on=date(2026, 1, 1),
             arrived_on=date(2026, 1, 5),
             from_who="Test Seller",
             expected_units=4,
-            note="TEST DATA — not a real purchase.",
+            note="TEST DATA — not a real order.",
         )
-        parts_order = Purchase.objects.create(
-            kind=Purchase.Kind.PARTS,
+        parts_order = Order.objects.create(
+            kind=Order.Kind.PARTS,
             label="TEST parts — hall modules 10pk",
             source=source,
             order_ref="TEST-ORDER-002",
             total_price=Decimal("12.00"),
-            purchased_on=date(2026, 1, 2),
+            ordered_on=date(2026, 1, 2),
             arrived_on=date(2026, 1, 9),
             from_who="Test Seller",
             expected_units=10,
-            note="TEST DATA — not a real purchase.",
+            note="TEST DATA — not a real order.",
         )
 
         statuses = [
@@ -112,7 +112,7 @@ class Command(BaseCommand):
                     reference=ref,
                     revision=revision if i == 3 else None,
                     location=bench,
-                    purchase=lot if i <= 4 else None,
+                    order=lot if i <= 4 else None,
                 )
             )
 
@@ -163,7 +163,7 @@ class Command(BaseCommand):
             note="TEST DATA.",
         )
         StockIntake.objects.create(
-            purchase=parts_order, stock_item=halls, quantity=10, note="TEST intake."
+            order=parts_order, stock_item=halls, quantity=10, note="TEST intake."
         )
 
         if ref:
@@ -190,7 +190,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"seeded: {len(devices)} devices, 2 purchases, 1 repair, "
+                f"seeded: {len(devices)} devices, 2 orders, 1 repair, "
                 "1 exit, 2 stock items, 2 comp pulls — all TEST-labeled"
             )
         )

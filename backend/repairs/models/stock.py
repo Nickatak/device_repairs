@@ -1,4 +1,4 @@
-"""Parts stock — the join between purchases (money in) and bench Parts (consumption).
+"""Parts stock — the join between orders (money out) and bench Parts (consumption).
 
 A StockItem is a MINTED SKU (Nick's 2026-07-23 design session): clone parts have
 no meaningful manufacturer numbers, so the bucket's identity is our own name for
@@ -19,7 +19,7 @@ Two tracking tiers, chosen per bucket:
 
 from django.db import models
 
-from .purchases import Purchase
+from .orders import Order
 from .reference import DeviceReference, Revision
 
 
@@ -41,7 +41,7 @@ class StockItem(models.Model):
     category = models.CharField(
         max_length=60,
         blank=True,
-        help_text="Free-text grouping matching the purchase ledger: 'controller-parts', 'connectors'.",
+        help_text="Free-text grouping matching the order ledger: 'controller-parts', 'connectors'.",
     )
     note = models.TextField(
         blank=True,
@@ -108,11 +108,11 @@ class StockItem(models.Model):
 
 
 class StockIntake(models.Model):
-    """Units entering a bucket from a purchase — one purchase can feed many
+    """Units entering a bucket from a order — one order can feed many
     buckets (an 8-bag daughterboard order = 4 SKUs × 20)."""
 
-    purchase = models.ForeignKey(
-        Purchase, on_delete=models.CASCADE, related_name="stock_intakes"
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="stock_intakes"
     )
     stock_item = models.ForeignKey(
         StockItem, on_delete=models.CASCADE, related_name="intakes"
@@ -125,4 +125,4 @@ class StockIntake(models.Model):
         ordering = ["-created_at", "-id"]
 
     def __str__(self):
-        return f"+{self.quantity} → {self.stock_item} (from {self.purchase})"
+        return f"+{self.quantity} → {self.stock_item} (from {self.order})"

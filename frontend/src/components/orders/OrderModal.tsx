@@ -2,28 +2,28 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createPurchase, updatePurchase } from "@/app/actions";
+import { createOrder, updateOrder } from "@/app/actions";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
+import type { Order } from "@/lib/api/orders";
 import Modal from "@/components/ui/Modal";
 import { TextCombobox } from "@/components/ui/Combobox";
 import { formEnterGuard } from "@/components/ui/formKeys";
 
 // Record a buy event as it happens: "ebay order 111-1231312, $55.42, 2x DS4".
-// Device rows link to it afterward via the device form's purchase combobox.
+// Device rows link to it afterward via the device form's order combobox.
 // item === null => create mode; item set => edit mode.
-export default function PurchaseModal({
+export default function OrderModal({
   item = null,
   options,
   onClose,
   defaultKind = "device",
 }: {
-  item?: Purchase | null;
+  item?: Order | null;
   options: Options;
   onClose: () => void;
   // Create mode starts on the launching tab's kind; the select stays as the
   // recategorize escape hatch.
-  defaultKind?: Purchase["kind"];
+  defaultKind?: Order["kind"];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -37,7 +37,7 @@ export default function PurchaseModal({
           order_ref: item.order_ref,
           url: item.url,
           total_price: item.total_price ?? "",
-          purchased_on: item.purchased_on ?? "",
+          ordered_on: item.ordered_on ?? "",
           arrived_on: item.arrived_on ?? "",
           from_who: item.from_who,
           expected_units: item.expected_units?.toString() ?? "",
@@ -50,7 +50,7 @@ export default function PurchaseModal({
           order_ref: "",
           url: "",
           total_price: "",
-          purchased_on: "",
+          ordered_on: "",
           arrived_on: "",
           from_who: "",
           expected_units: "",
@@ -72,7 +72,7 @@ export default function PurchaseModal({
       order_ref: form.order_ref,
       url: form.url,
       total_price: form.total_price.trim() === "" ? null : form.total_price.trim(),
-      purchased_on: form.purchased_on === "" ? null : form.purchased_on,
+      ordered_on: form.ordered_on === "" ? null : form.ordered_on,
       arrived_on: form.arrived_on === "" ? null : form.arrived_on,
       from_who: form.from_who,
       expected_units:
@@ -81,8 +81,8 @@ export default function PurchaseModal({
     };
     startTransition(async () => {
       const result = item
-        ? await updatePurchase(item.id, data)
-        : await createPurchase(data);
+        ? await updateOrder(item.id, data)
+        : await createOrder(data);
       if (result.ok) {
         router.refresh();
         onClose();
@@ -94,7 +94,7 @@ export default function PurchaseModal({
 
   return (
     <Modal onClose={onClose}>
-      <h2>{item ? "Edit purchase" : "Add purchase"}</h2>
+      <h2>{item ? "Edit order" : "Add order"}</h2>
       <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <div className="row">
           <label>
@@ -105,6 +105,7 @@ export default function PurchaseModal({
             >
               <option value="device">Devices</option>
               <option value="parts">Parts</option>
+              <option value="job">Job</option>
             </select>
           </label>
           <label>
@@ -166,11 +167,11 @@ export default function PurchaseModal({
         </div>
         <div className="row">
           <label>
-            Purchased on
+            Ordered on
             <input
               type="date"
-              value={form.purchased_on}
-              onChange={(e) => set("purchased_on", e.target.value)}
+              value={form.ordered_on}
+              onChange={(e) => set("ordered_on", e.target.value)}
             />
           </label>
           <label>

@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from django.core.exceptions import ValidationError
 
-from .purchases import Purchase
+from .orders import Order
 from .reference import DeviceReference, Revision
 
 
@@ -104,8 +104,8 @@ class Device(models.Model):
         related_name="devices",
         help_text="Where the unit physically sits right now ('Shelf 1'). Null = untracked.",
     )
-    purchase = models.ForeignKey(
-        Purchase,
+    order = models.ForeignKey(
+        Order,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -123,7 +123,7 @@ class Device(models.Model):
         help_text=(
             "Explicit unit cost for mixed lots (2 DS5 + 3 DS4 shouldn't split "
             "evenly). Units without one split the lot's remainder evenly. "
-            "Null = derive from the purchase."
+            "Null = derive from the order."
         ),
     )
     touched_at = models.DateTimeField(
@@ -151,8 +151,8 @@ class Device(models.Model):
         """What this unit cost: the override when set, else the lot's even share."""
         if self.cost_override is not None:
             return self.cost_override
-        if self.purchase_id:
-            return self.purchase.unit_price
+        if self.order_id:
+            return self.order.unit_price
         return None
 
     def __str__(self):

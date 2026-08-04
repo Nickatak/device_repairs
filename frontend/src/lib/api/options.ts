@@ -1,7 +1,7 @@
 // The cross-domain combobox aggregate — mirrors the backend's views/options.py.
 
 import { API_BASE } from "./client";
-import type { Purchase } from "./purchases";
+import type { Order } from "./orders";
 
 export interface StatusOption {
   value: string;
@@ -24,7 +24,7 @@ export interface Options {
   locations: string[];
   sources: string[];
   people: string[];
-  purchases: Purchase[];
+  orders: Order[];
   statuses: StatusOption[];
 }
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from repairs.models import Device, Location, Purchase
+from repairs.models import Device, Location, Order
 
 from .helpers import make_ref
 
@@ -80,15 +80,15 @@ class DeviceStatusTests(TestCase):
 
 
 class BulkAddTests(TestCase):
-    """Bulk add spawns N identical skeletons from one purchase."""
+    """Bulk add spawns N identical skeletons from one order."""
 
-    def test_bulk_create_links_purchase_reference_location_and_notes(self):
-        purchase = Purchase.objects.create(total_price=Decimal("30.00"), expected_units=3)
+    def test_bulk_create_links_order_reference_location_and_notes(self):
+        order = Order.objects.create(total_price=Decimal("30.00"), expected_units=3)
         ref = make_ref(name="DS4", brand="Sony", lane_name="controller")
         res = self.client.post(
             "/api/v1/inventory/bulk/",
             {
-                "purchase": purchase.pk,
+                "order": order.pk,
                 "location": "Shelf 2",
                 "notes": "from the 3x lot",
                 "lines": [{"reference": ref.pk, "quantity": 3}],
@@ -97,7 +97,7 @@ class BulkAddTests(TestCase):
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["created"], 3)
-        devices = Device.objects.filter(purchase=purchase)
+        devices = Device.objects.filter(order=order)
         self.assertEqual(devices.count(), 3)
         for device in devices:
             self.assertEqual(device.reference, ref)
@@ -105,7 +105,7 @@ class BulkAddTests(TestCase):
             # Shared bulk notes land as each unit's first chunk.
             self.assertEqual(device.device_notes.get().text, "from the 3x lot")
             self.assertEqual(device.status, "shipped")  # default
-        self.assertEqual(purchase.unit_price, Decimal("10.00"))
+        self.assertEqual(order.unit_price, Decimal("10.00"))
 
     def test_bulk_create_rejects_zero_quantity(self):
         res = self.client.post(
@@ -118,13 +118,13 @@ class BulkAddTests(TestCase):
 
     def test_bulk_create_heterogeneous_lot(self):
         # The 2-DS5 + 3-DS4 case: one call, per-line references.
-        purchase = Purchase.objects.create(total_price=Decimal("100.00"), expected_units=5)
+        order = Order.objects.create(total_price=Decimal("100.00"), expected_units=5)
         ds5 = make_ref(name="DualSense", brand="Sony", lane_name="controller")
         ds4 = make_ref(name="DS4", brand="Sony", lane_name="controller")
         res = self.client.post(
             "/api/v1/inventory/bulk/",
             {
-                "purchase": purchase.pk,
+                "order": order.pk,
                 "location": "Shelf 2",
                 "lines": [
                     {"reference": ds5.pk, "quantity": 2},
@@ -135,8 +135,8 @@ class BulkAddTests(TestCase):
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(res.json()["created"], 5)
-        self.assertEqual(Device.objects.filter(purchase=purchase, reference=ds5).count(), 2)
-        self.assertEqual(Device.objects.filter(purchase=purchase, reference=ds4).count(), 3)
+        self.assertEqual(Device.objects.filter(order=order, reference=ds5).count(), 2)
+        self.assertEqual(Device.objects.filter(order=order, reference=ds4).count(), 3)
 
     def test_bulk_create_caps_total_units(self):
         res = self.client.post(

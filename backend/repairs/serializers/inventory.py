@@ -2,12 +2,12 @@
 
 from rest_framework import serializers
 
-from repairs.models import Device, DeviceNote, DeviceReference, Location, Purchase, Revision
+from repairs.models import Device, DeviceNote, DeviceReference, Location, Order, Revision
 
 from .reference import RevisionSerializer
 
 from .exits import ExitSerializer
-from .purchases import PurchaseSerializer
+from .orders import OrderSerializer
 from .reference import DeviceReferenceSerializer
 from .repairlog import MediaSerializer, NoteTemplateSerializer, RepairWithNotesSerializer
 
@@ -33,7 +33,7 @@ class DeviceNoteWriteSerializer(serializers.ModelSerializer):
 class InventoryDeviceSerializer(serializers.ModelSerializer):
     label = serializers.SerializerMethodField()
     location = serializers.StringRelatedField()
-    purchase = PurchaseSerializer(read_only=True)
+    order = OrderSerializer(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     repair_count = serializers.IntegerField(source="repairs.count", read_only=True)
     unit_cost = serializers.SerializerMethodField()
@@ -50,7 +50,7 @@ class InventoryDeviceSerializer(serializers.ModelSerializer):
             "revision",
             "serial",
             "location",
-            "purchase",
+            "order",
             "notes",
             "status",
             "status_display",
@@ -80,7 +80,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
 
     label = serializers.SerializerMethodField()
     location = serializers.StringRelatedField()
-    purchase = PurchaseSerializer(read_only=True)
+    order = OrderSerializer(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reference = DeviceReferenceSerializer(read_only=True)
     revision = RevisionSerializer(read_only=True)
@@ -99,7 +99,7 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
             "revision",
             "serial",
             "location",
-            "purchase",
+            "order",
             "device_notes",
             "note_templates",
             "status",
@@ -131,7 +131,7 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
     """Write path for the create + edit modals — Device's own fields only.
 
     Identity is the `reference` FK into the catalog (picked via combobox; null =
-    off-catalog unit). Money/source come via the `purchase` FK — the buy event —
+    off-catalog unit). Money/source come via the `order` FK — the buy event —
     never as device-local fields. `status` is the device's own lifecycle field —
     writing it never touches repairs (the old phantom-repair-as-status-carrier
     behavior is gone).
@@ -150,8 +150,8 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
     revision = serializers.PrimaryKeyRelatedField(
         queryset=Revision.objects.all(), required=False, allow_null=True
     )
-    purchase = serializers.PrimaryKeyRelatedField(
-        queryset=Purchase.objects.all(), required=False, allow_null=True
+    order = serializers.PrimaryKeyRelatedField(
+        queryset=Order.objects.all(), required=False, allow_null=True
     )
     location = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     notes = serializers.CharField(
@@ -165,7 +165,7 @@ class DeviceWriteSerializer(serializers.ModelSerializer):
             "revision",
             "serial",
             "location",
-            "purchase",
+            "order",
             "notes",
             "status",
             "cost_override",
@@ -226,15 +226,15 @@ class BulkLineSerializer(serializers.Serializer):
 
 
 class DeviceBulkCreateSerializer(serializers.Serializer):
-    """Spawn device rows from one purchase ('2x DS5 + 3x DS4 arrived').
+    """Spawn device rows from one order ('2x DS5 + 3x DS4 arrived').
 
     Lines carry the heterogeneity — each line is reference × quantity; shared
-    fields (purchase, location, status, notes) apply to every spawned row.
+    fields (order, location, status, notes) apply to every spawned row.
     Per-unit identity (serial, cost override) is refined afterward on each row.
     """
 
-    purchase = serializers.PrimaryKeyRelatedField(
-        queryset=Purchase.objects.all(), required=False, allow_null=True, default=None
+    order = serializers.PrimaryKeyRelatedField(
+        queryset=Order.objects.all(), required=False, allow_null=True, default=None
     )
     location = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
@@ -252,7 +252,7 @@ class DeviceBulkCreateSerializer(serializers.Serializer):
         notes = validated_data["notes"].strip()
         devices = [
             Device.objects.create(
-                purchase=validated_data["purchase"],
+                order=validated_data["order"],
                 reference=line["reference"],
                 location=location,
                 status=validated_data["status"],

@@ -1,16 +1,16 @@
 """Import physical units from the tracking ledger's devices/units.csv.
 
-Snapshot import, same flow as seed_purchases: copy the CSV into
+Snapshot import, same flow as seed_orders: copy the CSV into
 repairs/data/device_units.csv and re-run — idempotent, keyed on the unit's
 ledger id (stored as Device.ledger_ref). Site-entered devices (blank
 ledger_ref) are never touched.
 
 Mapping (CSV → Device):
-    id       → ledger_ref (natural key); lot prefix links purchase ("0004-1" → 0004)
+    id       → ledger_ref (natural key); lot prefix links order ("0004-1" → 0004)
     model    → label (verbatim — unit specificity) + reference via MODEL_MAP
     status   → status ("in-repair" → "in_repair"; the rest match)
     fault / notes / label(bench) / listed / sold / sale_price / fees → first DeviceNote chunk
-    acquired → backfills the lot's Purchase.arrived_on (earliest unit date) when unset
+    acquired → backfills the lot's Order.arrived_on (earliest unit date) when unset
     ignore (non-empty) → row skipped
 
 MODEL_MAP holds only unambiguous class matches; a unit whose variant is
@@ -25,7 +25,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from repairs.models import Device, DeviceReference, Purchase
+from repairs.models import Device, DeviceReference, Order
 
 DATA_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "device_units.csv"
 
@@ -136,11 +136,11 @@ class Command(BaseCommand):
     help = "Import physical units from repairs/data/device_units.csv (idempotent)."
 
     def handle(self, *args, **options):
-        # Lot id → Purchase, via the semicolon lists in ledger_ref.
-        lot_to_purchase = {}
-        for purchase in Purchase.objects.exclude(ledger_ref=""):
-            for lot in purchase.ledger_ref.split(";"):
-                lot_to_purchase[lot.strip()] = purchase
+        # Lot id → Order, via the semicolon lists in ledger_ref.
+        lot_to_order = {}
+        for order in Order.objects.exclude(ledger_ref=""):
+            for lot in order.ledger_ref.split(";"):
+                lot_to_order[lot.strip()] = order
 
         ref_cache = {}
 
@@ -156,7 +156,7 @@ class Command(BaseCommand):
 
         created = updated = skipped = 0
         unmapped = set()
-        arrivals = {}  # purchase → earliest unit acquired date
+        arrivals = {}  # order → earliest unit acquired date
         with open(DATA_FILE, newline="", encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
                 if (row.get("ignore") or "").strip():
@@ -164,21 +164,21 @@ class Command(BaseCommand):
                     continue
                 unit_id = row["id"].strip()
                 lot = unit_id.split("-")[0]
-                purchase = lot_to_purchase.get(lot)
+                order = lot_to_order.get(lot)
                 model_string = row["model"].strip()
                 if model_string not in MODEL_MAP:
                     unmapped.add(model_string)
                 reference = resolve_ref(model_string)
                 acquired = row["acquired"].strip()
-                if purchase and acquired:
-                    prev = arrivals.get(purchase)
-                    arrivals[purchase] = min(prev, acquired) if prev else acquired
+                if order and acquired:
+                    prev = arrivals.get(order)
+                    arrivals[order] = min(prev, acquired) if prev else acquired
                 device, made = Device.objects.update_or_create(
                     ledger_ref=unit_id,
                     defaults={
                         "label": model_string,
                         "reference": reference,
-                        "purchase": purchase,
+                        "order": order,
                         "status": STATUS_MAP.get(row["status"], row["status"]),
                     },
                 )
@@ -197,15 +197,15 @@ class Command(BaseCommand):
                 updated += not made
 
         backfilled = 0
-        for purchase, date in arrivals.items():
-            if purchase.arrived_on is None:
-                purchase.arrived_on = date
-                purchase.save()
+        for order, date in arrivals.items():
+            if order.arrived_on is None:
+                order.arrived_on = date
+                order.save()
                 backfilled += 1
 
         self.stdout.write(
             f"Done — units: {created} created, {updated} refreshed, {skipped} skipped "
-            f"(ignore); arrival dates backfilled on {backfilled} purchases."
+            f"(ignore); arrival dates backfilled on {backfilled} orders."
         )
         for model_string in sorted(unmapped):
             self.stderr.write(f"UNMAPPED model string (imported with null reference): {model_string}")

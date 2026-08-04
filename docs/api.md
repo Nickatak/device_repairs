@@ -22,13 +22,24 @@ predict, the source under `backend/repairs/` wins.
 - **PII goes in the DB, not in the repo.** Order numbers, seller handles,
   serials, prices all belong in these API payloads — the DB is private. What
   they must never enter is committed seed files in the public repo.
-- **Never run seed commands** (`seed_purchases`, `seed_units`, `seed_pricesheet`,
+- **Never run seed commands** (`seed_orders`, `seed_units`, `seed_pricesheet`,
   `seed_reference`) against this DB — they're historical imports and clobber
   post-freeze edits. (`seed_issues` / `seed_repairs` / `seed_parts` /
   `seed_revisions` / `seed_stock` are upsert-safe but still not yours to run
   casually — `seed_stock` in particular would revert live counts to the
   2026-07-23 import bases.)
 - **No DELETE anywhere** — by design. Corrections are PATCHes.
+- **No stragglers / orphaned parental rows (policy, 2026-07-29).** An order
+  or device row minted in error must not linger as a tombstone — clean it up
+  in the same session. The API can't delete, so removal goes through the ORM
+  on dock01 (`docker compose exec backend python manage.py shell`), guarded:
+  verify the row is bare first (no repairs, exits, or photos; delete note
+  chunks via the API beforehand), delete child device rows before their
+  order, and report the deleted IDs. Prevention beats cleanup: **before
+  POSTing an order or device for something already in hand, search
+  `GET /orders/` and `GET /inventory/` for an existing row** — unknowns
+  get stubbed at pickup time ("model TBD at intake") and are usually already
+  waiting to be filled in.
 - Money fields are JSON **strings** of decimals (`"37.87"`); dates are
   `"YYYY-MM-DD"`; datetimes ISO-8601 UTC. Send numbers for money if easier —
   DRF (Django REST Framework) accepts either — but you'll read strings back.
@@ -45,6 +56,12 @@ predict, the source under `backend/repairs/` wins.
 - After writing, GET the object back (or load the page) and confirm the state
   you meant to create. Report IDs to Nick so rows are findable.
 
+> **Naming (2026-08-04):** the Purchase model was renamed **Order** — it was
+> always a batch-intake event, not strictly a buy (gifts, own stock, and
+> customer jobs all live here). Old notes/memories saying `/purchases/`,
+> `purchased_on`, or a device's `purchase` field mean `/orders/`,
+> `ordered_on`, and `order`.
+
 ## Recipe: record an order (the main workflow)
 
 Nick reports something like: *"Ordered 2x DS4 + 1x DS5 on eBay, order
@@ -55,10 +72,10 @@ of catalog rows (`id`, `brand`, `name`, `sku_prefix`, `model_numbers`),
 most-recently-used first. Match the models Nick named; if a unit has no catalog
 row, use `reference: null` and put what's known in the device's `notes`.
 `options` also carries `sources`, `people` (from_who pool), `locations`,
-`statuses`, and recent `purchases` — check it before inventing spellings so
+`statuses`, and recent `orders` — check it before inventing spellings so
 lookups reuse existing rows ("eBay", not "Ebay").
 
-**2. Create the purchase** — `POST /purchases/`
+**2. Create the order** — `POST /orders/`
 
 ```json
 {
@@ -67,7 +84,7 @@ lookups reuse existing rows ("eBay", not "Ebay").
   "order_ref": "12-34567-89012",
   "url": "https://order.ebay.com/ord/show?orderId=12-34567-89012",
   "total_price": "52.50",
-  "purchased_on": "2026-07-22",
+  "ordered_on": "2026-07-22",
   "from_who": "somehandle",
   "expected_units": 3,
   "note": "2x DS4 + 1x DS5, untested lot"
@@ -75,9 +92,10 @@ lookups reuse existing rows ("eBay", not "Ebay").
 ```
 
 - `source` is free text; the backend get-or-creates the lookup row.
-- `kind`: `"device"` (default) or `"parts"`. Parts orders are ledger-only —
-  give them a `label` ("DS4 hall module 20-pack"), set `expected_units` to the
-  piece count, and **stop here** (no device rows hang off parts purchases).
+- `kind`: `"device"` (default), `"parts"`, or `"job"`. Parts orders are
+  ledger-only — give them a `label` ("DS4 hall module 20-pack"), set
+  `expected_units` to the piece count, and **stop here** (no device rows hang
+  off parts orders). Jobs are customer work orders — see the recipe below.
 - `expected_units` matters: it's the unit-price divisor before all device rows
   exist. Set it to what the lot should yield.
 - `url` convention: the ORDER page, not the listing (eBay:
@@ -88,7 +106,7 @@ lookups reuse existing rows ("eBay", not "Ebay").
 
 ```json
 {
-  "purchase": 34,
+  "order": 34,
   "status": "shipped",
   "lines": [
     {"reference": 12, "quantity": 2},
@@ -111,21 +129,37 @@ basically $30 of it"), set that unit's explicit cost:
 their cost out of the pot; the rest split the remainder. Don't invent
 overrides — no statement from Nick = even split.
 
-**5. Verify** — `GET /purchases/34/` returns the purchase with its `devices`
+**5. Verify** — `GET /orders/34/` returns the order with its `devices`
 array and computed `unit_price`. Check unit count and money, then tell Nick the
-purchase ID and device IDs (page: `http://repairs.home.arpa/purchases/34`).
+order ID and device IDs (page: `http://repairs.home.arpa/orders/34`).
 
 ## Recipe: the lot arrived
 
-`POST /purchases/<id>/arrive/` with optional `{"date": "YYYY-MM-DD"}` (default
+`POST /orders/<id>/arrive/` with optional `{"date": "YYYY-MM-DD"}` (default
 today). Stamps `arrived_on` and flips that lot's `shipped` units to `acquired`
 in one stroke; units already past shipped are untouched. Returns
 `{"arrived_on": ..., "units_acquired": N}`.
 
 Per-unit facts learned at intake (serial, actual model, condition) go on each
 device: `PATCH /inventory/<id>/` with any of `serial`, `reference`, `location`,
-`status`, `cost_override`, `purchase`. Prose facts go through device notes
+`status`, `cost_override`, `order`. Prose facts go through device notes
 (below) — a PATCH sending `notes` 400s since 2026-07-27.
+
+## Recipe: customer job intake (kind="job")
+
+A customer hands Nick units to repair (first job: order #151, 2026-08-04,
+2x Xbox 1914 controllers). Same shape as a device order, different
+semantics: the units are CUSTOMER PROPERTY, not inventory.
+
+- `POST /orders/` with `kind: "job"`, `source: "Customer"`, `from_who` = the
+  customer's name, `total_price: "0.00"` (nothing was bought — the service
+  fee rides the Exit when the unit goes home), `ordered_on`/arrive = the
+  hand-off date.
+- Spawn device rows via `/inventory/bulk/` as usual, `status: "acquired"`
+  (they're in hand, not shipped). Give each a device-note chunk marking it
+  customer-owned so it never reads as sellable stock.
+- Bench work is the normal repair log. Exit kind at job end + how the fee is
+  recorded: not yet settled — ask Nick at the first job completion.
 
 ## Recipe: device notes (unit-grain facts)
 
@@ -159,9 +193,9 @@ recounts override; live `count` is derived server-side) and `presence`
 `fits_references` / `fits_revisions` (ids) plus the free-text `note`.
 
 - When a **parts order arrives** and Nick says which bucket(s) it fills:
-  `POST /stock/intakes/` `{"purchase": <parts purchase id>, "stock_item": <id>,
-  "quantity": N}` — device-kind purchases are rejected. One purchase can feed
-  several buckets. Also stamp the purchase arrival (arrive endpoint or PATCH).
+  `POST /stock/intakes/` `{"order": <parts order id>, "stock_item": <id>,
+  "quantity": N}` — device-kind orders are rejected. One order can feed
+  several buckets. Also stamp the order arrival (arrive endpoint or PATCH).
 - **Physical recount**: `POST /stock/<id>/recount/` `{"count": N}` — sets the
   new base and stamps `counted_at` server-side. This is the ONLY way the count
   is set directly; never try to PATCH a count.
@@ -293,15 +327,15 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 
 | Method + path | Purpose |
 |---|---|
-| GET `/inventory/` | All devices (label, status, purchase embed, unit_cost, touched_at) |
-| POST `/inventory/` | Create one device (`reference`, `serial`, `location`, `purchase`, `status`, `cost_override`; `notes` spawns the first chunk) |
-| POST `/inventory/bulk/` | Spawn N devices from one purchase (lines) |
+| GET `/inventory/` | All devices (label, status, order embed, unit_cost, touched_at) |
+| POST `/inventory/` | Create one device (`reference`, `serial`, `location`, `order`, `status`, `cost_override`; `notes` spawns the first chunk) |
+| POST `/inventory/bulk/` | Spawn N devices from one order (lines) |
 | GET/PATCH `/inventory/<id>/` | Device detail (repairs, device_notes, exits nested) / edit device fields |
 | POST `/device-notes/` · PATCH/DELETE `/device-notes/<id>/` | Unit-fact chunks on a device (delete refuses photo-carrying chunks) |
-| GET `/purchases/` | Buy events, newest first |
-| POST `/purchases/` | Record a purchase |
-| GET/PATCH `/purchases/<id>/` | Purchase + its `devices` array / edit purchase fields |
-| POST `/purchases/<id>/arrive/` | Stamp arrival, flip shipped→acquired |
+| GET `/orders/` | Buy events, newest first |
+| POST `/orders/` | Record an order |
+| GET/PATCH `/orders/<id>/` | Order + its `devices` array / edit order fields |
+| POST `/orders/<id>/arrive/` | Stamp arrival, flip shipped→acquired |
 | POST `/exits/` | Record a departure (flips device to exited) |
 | PATCH `/exits/<id>/` | Correct an exit |
 | POST `/repairs/` · PATCH `/repairs/<id>/` | Start repair · phase track/completion |
@@ -312,11 +346,11 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
 | GET/POST `/stock/` | Buckets with live counts / mint a SKU |
 | GET/PATCH `/stock/<id>/` | Bucket detail / identity + state edits (never count) |
 | POST `/stock/<id>/recount/` | Physical recount: new base + stamp |
-| POST `/stock/intakes/` · PATCH `/stock/intakes/<id>/` | Units entering a bucket from a parts purchase |
+| POST `/stock/intakes/` · PATCH `/stock/intakes/<id>/` | Units entering a bucket from a parts order |
 | GET `/reference/` | Full price-sheet catalog (comps, issues, variants, revisions) |
 | POST `/revisions/` · PATCH `/revisions/<id>/` | Board revisions on a catalog row (`reference`, `name`, `note`, `position`) — the one writable catalog layer |
 | GET `/lanes/` | Category lanes |
-| GET `/options/` | Lookup pools: references, sources, people, locations, statuses, recent purchases |
+| GET `/options/` | Lookup pools: references, sources, people, locations, statuses, recent orders |
 | GET `/cash/` | `money_out` / `money_in` / `net` + counts |
 
 ## Enums
@@ -332,7 +366,7 @@ curl -X POST <base>/media/ -F "note=55" -F "caption=lifted pad, pre-bodge" \
   "fixed". A force-parked unit (shell closed mid-repair) leaves the
   Disassembled family and its pending work lives in notes. Manually set except
   the two automatic flips (arrive, exit).
-- **Purchase.kind**: `device`, `parts`.
+- **Order.kind**: `device`, `parts`, `job`.
 - **Exit.kind**: `sold`, `gifted`, `parted`, `scrapped`, `returned`, `lost`.
 - **Repair phases** (in order, reworked 2026-07-28): `intake` (as-received
   function test, before the shell opens), `teardown`, `diagnostics` (fault

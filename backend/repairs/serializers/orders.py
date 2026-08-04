@@ -1,19 +1,19 @@
-"""Purchase payloads — the buy event, read and write paths."""
+"""Order payloads — the buy event, read and write paths."""
 
 from rest_framework import serializers
 
-from repairs.models import Device, Purchase, Source
+from repairs.models import Device, Order, Source
 
 
-class PurchaseSerializer(serializers.ModelSerializer):
-    """The buy event, embedded on device payloads and listed on /purchases/."""
+class OrderSerializer(serializers.ModelSerializer):
+    """The buy event, embedded on device payloads and listed on /orders/."""
 
     source = serializers.StringRelatedField()
     unit_price = serializers.SerializerMethodField()
     device_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Purchase
+        model = Order
         fields = [
             "id",
             "kind",
@@ -23,7 +23,7 @@ class PurchaseSerializer(serializers.ModelSerializer):
             "url",
             "ledger_ref",
             "total_price",
-            "purchased_on",
+            "ordered_on",
             "arrived_on",
             "from_who",
             "expected_units",
@@ -41,9 +41,9 @@ class PurchaseSerializer(serializers.ModelSerializer):
         return len(obj.devices.all())
 
 
-class PurchaseUnitSerializer(serializers.ModelSerializer):
-    """Slim device row for the purchase page's units table — no purchase echo
-    (the parent payload IS the purchase)."""
+class OrderUnitSerializer(serializers.ModelSerializer):
+    """Slim device row for the order page's units table — no order echo
+    (the parent payload IS the order)."""
 
     label = serializers.SerializerMethodField()
     location = serializers.StringRelatedField()
@@ -74,22 +74,22 @@ class PurchaseUnitSerializer(serializers.ModelSerializer):
         return str(cost) if cost is not None else None
 
 
-class PurchaseDetailSerializer(PurchaseSerializer):
-    """The purchase page payload — the buy event plus its linked device rows."""
+class OrderDetailSerializer(OrderSerializer):
+    """The order page payload — the buy event plus its linked device rows."""
 
-    devices = PurchaseUnitSerializer(many=True, read_only=True)
+    devices = OrderUnitSerializer(many=True, read_only=True)
 
-    class Meta(PurchaseSerializer.Meta):
-        fields = [*PurchaseSerializer.Meta.fields, "devices"]
+    class Meta(OrderSerializer.Meta):
+        fields = [*OrderSerializer.Meta.fields, "devices"]
 
 
-class PurchaseWriteSerializer(serializers.ModelSerializer):
-    """Create / edit a purchase. Source resolves free text to the lookup row."""
+class OrderWriteSerializer(serializers.ModelSerializer):
+    """Create / edit a order. Source resolves free text to the lookup row."""
 
     source = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
-        model = Purchase
+        model = Order
         fields = [
             "id",
             "kind",
@@ -98,7 +98,7 @@ class PurchaseWriteSerializer(serializers.ModelSerializer):
             "order_ref",
             "url",
             "total_price",
-            "purchased_on",
+            "ordered_on",
             "arrived_on",
             "from_who",
             "expected_units",

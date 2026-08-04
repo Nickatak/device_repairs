@@ -1,5 +1,5 @@
-// Exits — the departure events. Money out lives here; the mirror of purchases.
-// Type only: exit payloads arrive nested on device/purchase detail; writes go
+// Exits — the departure events. Money out lives here; the mirror of orders.
+// Type only: exit payloads arrive nested on device/order detail; writes go
 // through actions.
 
 export interface Exit {

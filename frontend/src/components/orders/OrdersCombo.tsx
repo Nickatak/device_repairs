@@ -3,53 +3,60 @@
 import { useState } from "react";
 import type { CashSummary } from "@/lib/api/cash";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
-import PurchasesView from "./PurchasesView";
+import type { Order } from "@/lib/api/orders";
+import OrdersView from "./OrdersView";
 
-// One Purchases page, two money-in ledgers: device lots (split into Device
-// rows) and stock purchases (feed /stock buckets). Tab state is client-side;
-// ?tab=parts deep-links the stock tab. key= remounts the view per tab so
-// filters/sort/pagination start fresh — the two ledgers share no filter state.
-export default function PurchasesCombo({
-  purchases,
+// One Orders page, three ledgers: device lots (split into Device rows),
+// stock orders (feed /stock buckets), and customer jobs (units in for
+// service). Tab state is client-side; ?tab=parts / ?tab=job deep-link.
+// key= remounts the view per tab so filters/sort/pagination start fresh —
+// the ledgers share no filter state.
+export default function OrdersCombo({
+  orders,
   options,
   cash,
   error,
   initialQuery = "",
   initialTab = "device",
 }: {
-  purchases: Purchase[];
+  orders: Order[];
   options: Options;
   cash: CashSummary | null;
   error: string | null;
   initialQuery?: string;
-  initialTab?: Purchase["kind"];
+  initialTab?: Order["kind"];
 }) {
-  const [tab, setTab] = useState<Purchase["kind"]>(initialTab);
+  const [tab, setTab] = useState<Order["kind"]>(initialTab);
 
   return (
-    <PurchasesView
+    <OrdersView
       key={tab}
-      purchases={purchases}
+      orders={orders}
       options={options}
       error={error}
       initialQuery={initialQuery}
       kind={tab}
       cash={cash}
-      title="Purchases"
+      title="Orders"
       tabs={
         <div className="page-tabs">
           <button
             className={`page-tab${tab === "device" ? " active" : ""}`}
             onClick={() => setTab("device")}
           >
-            Device Purchases
+            Device Orders
           </button>
           <button
             className={`page-tab${tab === "parts" ? " active" : ""}`}
             onClick={() => setTab("parts")}
           >
-            Stock Purchases
+            Stock Orders
+          </button>
+          <button
+            className={`page-tab${tab === "job" ? " active" : ""}`}
+            onClick={() => setTab("job")}
+          >
+            Jobs
           </button>
         </div>
       }

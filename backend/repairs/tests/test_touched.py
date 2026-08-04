@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from repairs.models import Device, DeviceNote, Purchase, Repair
+from repairs.models import Device, DeviceNote, Order, Repair
 
 from .test_media import make_jpeg
 
@@ -102,12 +102,12 @@ class TouchedAtTests(TestCase):
         self.assertBumped()
 
     def test_arrival_flip_bumps_shipped_units_only(self):
-        purchase = Purchase.objects.create(total_price=Decimal("10.00"))
-        shipped = Device.objects.create(purchase=purchase, status="shipped")
-        acquired = Device.objects.create(purchase=purchase, status="awaiting_exit")
+        order = Order.objects.create(total_price=Decimal("10.00"))
+        shipped = Device.objects.create(order=order, status="shipped")
+        acquired = Device.objects.create(order=order, status="awaiting_exit")
         self.reset(shipped)
         self.reset(acquired)
-        res = self.client.post(f"/api/v1/purchases/{purchase.pk}/arrive/", {})
+        res = self.client.post(f"/api/v1/orders/{order.pk}/arrive/", {})
         self.assertEqual(res.status_code, 200)
         self.assertGreater(self.stamp(shipped), LONG_AGO)
         # Units past shipped aren't part of the flip — no phantom edit stamp.

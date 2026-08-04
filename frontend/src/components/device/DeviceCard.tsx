@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { DeviceDetail as DeviceDetailT } from "@/lib/api/inventory";
 import { bandClass, formatDateTime, formatPrice } from "@/lib/format";
-import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
+import { orderHref, orderLabel, orderShort } from "@/lib/order-format";
 
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
@@ -40,14 +40,14 @@ export default function DeviceCard({
         <Field label="Location" value={device.location} />
         <Field label="Serial" value={device.serial} />
         <div className="card-field">
-          <dt>Purchase</dt>
+          <dt>Order</dt>
           <dd>
-            {device.purchase ? (
+            {device.order ? (
               <Link
-                href={purchaseHref(device.purchase)}
-                title={purchaseLabel(device.purchase)}
+                href={orderHref(device.order)}
+                title={orderLabel(device.order)}
               >
-                {purchaseShort(device.purchase)}
+                {orderShort(device.order)}
               </Link>
             ) : (
               "—"
@@ -57,11 +57,11 @@ export default function DeviceCard({
         <Field
           label="Acquired"
           value={
-            device.purchase
+            device.order
               ? formatPrice(device.unit_cost) +
                 (device.cost_override !== null ? " (override)" : "") +
-                (device.purchase.expected_units || device.purchase.order_ref
-                  ? ` (lot: ${formatPrice(device.purchase.total_price)}${device.purchase.order_ref ? ` · ${device.purchase.order_ref}` : ""})`
+                (device.order.expected_units || device.order.order_ref
+                  ? ` (lot: ${formatPrice(device.order.total_price)}${device.order.order_ref ? ` · ${device.order.order_ref}` : ""})`
                   : "")
               : null
           }

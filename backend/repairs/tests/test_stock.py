@@ -9,7 +9,7 @@ from django.utils import timezone
 from repairs.models import (
     Device,
     Part,
-    Purchase,
+    Order,
     Repair,
     Revision,
     StockIntake,
@@ -19,8 +19,8 @@ from repairs.models import (
 from .helpers import make_ref
 
 
-def make_parts_purchase(**kwargs):
-    return Purchase.objects.create(kind=Purchase.Kind.PARTS, **kwargs)
+def make_parts_order(**kwargs):
+    return Order.objects.create(kind=Order.Kind.PARTS, **kwargs)
 
 
 class DerivedCountTests(TestCase):
@@ -30,7 +30,7 @@ class DerivedCountTests(TestCase):
         self.item = StockItem.objects.create(
             name="DS4 hall modules", mode=StockItem.Mode.COUNTED
         )
-        self.purchase = make_parts_purchase(label="hall 20-pack")
+        self.order = make_parts_order(label="hall 20-pack")
 
     def draw(self, quantity):
         device = Device.objects.create()
@@ -43,7 +43,7 @@ class DerivedCountTests(TestCase):
     def test_uncounted_item_reads_none_not_zero(self):
         # Intakes alone don't establish a base — pre-existing stock is unknown.
         StockIntake.objects.create(
-            purchase=self.purchase, stock_item=self.item, quantity=20
+            order=self.order, stock_item=self.item, quantity=20
         )
         self.assertIsNone(self.item.count)
 
@@ -52,14 +52,14 @@ class DerivedCountTests(TestCase):
         self.item.counted_at = timezone.now() - datetime.timedelta(days=1)
         self.item.save()
         StockIntake.objects.create(
-            purchase=self.purchase, stock_item=self.item, quantity=20
+            order=self.order, stock_item=self.item, quantity=20
         )
         self.draw(4)
         self.assertEqual(self.item.count, 26)
 
     def test_recount_supersedes_earlier_transactions(self):
         StockIntake.objects.create(
-            purchase=self.purchase, stock_item=self.item, quantity=20
+            order=self.order, stock_item=self.item, quantity=20
         )
         self.draw(4)
         # Physical recount AFTER those events: they're absorbed into the base.
@@ -75,7 +75,7 @@ class DerivedCountTests(TestCase):
         self.item.counted_at = timezone.now() - datetime.timedelta(days=1)
         self.item.save()
         intake = StockIntake.objects.create(
-            purchase=self.purchase, stock_item=self.item, quantity=20
+            order=self.order, stock_item=self.item, quantity=20
         )
         intake.quantity = 25
         intake.save()
@@ -93,8 +93,8 @@ class StockApiTests(TestCase):
         self.item = StockItem.objects.create(
             name="DS4 rubber sets 030/040", mode=StockItem.Mode.COUNTED
         )
-        self.parts = make_parts_purchase(label="rubber order")
-        self.devices = Purchase.objects.create(kind=Purchase.Kind.DEVICE)
+        self.parts = make_parts_order(label="rubber order")
+        self.devices = Order.objects.create(kind=Order.Kind.DEVICE)
 
     def test_recount_endpoint_sets_base_and_stamp(self):
         res = self.client.post(
@@ -107,10 +107,10 @@ class StockApiTests(TestCase):
         self.assertEqual(self.item.last_count, 42)
         self.assertIsNotNone(self.item.counted_at)
 
-    def test_intake_rejects_device_purchases(self):
+    def test_intake_rejects_device_orders(self):
         res = self.client.post(
             "/api/v1/stock/intakes/",
-            {"purchase": self.devices.id, "stock_item": self.item.id, "quantity": 5},
+            {"order": self.devices.id, "stock_item": self.item.id, "quantity": 5},
             content_type="application/json",
         )
         self.assertEqual(res.status_code, 400)

@@ -4,8 +4,8 @@ import { API_BASE } from "./client";
 
 export interface StockIntake {
   id: number;
-  purchase: number;
-  purchase_label: string;
+  order: number;
+  order_label: string;
   quantity: number;
   note: string;
   created_at: string;

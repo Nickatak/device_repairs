@@ -7,7 +7,7 @@ import { formatDate, formatPrice } from "@/lib/format";
 import ExitModal from "./ExitModal";
 
 // The device's departure history — usually one event; a return-then-resell is
-// two. Money out lives here, mirroring the purchase card's money in.
+// two. Money out lives here, mirroring the order card's money in.
 export default function Exits({
   deviceId,
   exits,
@@ -53,7 +53,7 @@ export default function Exits({
                 <td className="num">{formatPrice(exit.net)}</td>
                 <td>{exit.to_who || "—"}</td>
                 <td>
-                  <span className="purchase-note" title={exit.note}>
+                  <span className="order-note" title={exit.note}>
                     {exit.note || "—"}
                   </span>
                 </td>

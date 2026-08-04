@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options } from "@/lib/api/options";
 import { bandClass, formatDate, formatDateTime, formatPrice, isDisassembled } from "@/lib/format";
-import { purchaseHref, purchaseLabel, purchaseShort } from "@/lib/purchase-format";
+import { orderHref, orderLabel, orderShort } from "@/lib/order-format";
 import DeviceModal from "./DeviceModal";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
@@ -22,7 +22,7 @@ function StatusBadge({ item }: { item: InventoryItem }) {
 
 type ModalState = { mode: "create" } | { mode: "edit"; item: InventoryItem } | null;
 
-type SortKey = "ref" | "device" | "purchase" | "acquired" | "arrived" | "edited";
+type SortKey = "ref" | "device" | "order" | "acquired" | "arrived" | "edited";
 
 function sortValue(item: InventoryItem, key: SortKey): string | number | null {
   switch (key) {
@@ -30,12 +30,12 @@ function sortValue(item: InventoryItem, key: SortKey): string | number | null {
       return item.ledger_ref || null;
     case "device":
       return item.label;
-    case "purchase":
-      return item.purchase ? purchaseShort(item.purchase) : null;
+    case "order":
+      return item.order ? orderShort(item.order) : null;
     case "acquired":
       return item.unit_cost != null ? Number(item.unit_cost) : null;
     case "arrived":
-      return item.purchase?.arrived_on ?? null;
+      return item.order?.arrived_on ?? null;
     case "edited":
       return item.touched_at;
   }
@@ -51,9 +51,9 @@ function matches(item: InventoryItem, query: string): boolean {
     item.notes,
     item.status,
     item.status_display,
-    item.purchase?.ledger_ref ?? "",
-    item.purchase?.order_ref ?? "",
-    item.purchase?.source ?? "",
+    item.order?.ledger_ref ?? "",
+    item.order?.order_ref ?? "",
+    item.order?.source ?? "",
   ]
     .join(" ")
     .toLowerCase();
@@ -103,14 +103,14 @@ export default function InventoryView({
   applySort(visible, sort, sortValue);
   const pager = usePagination(visible);
 
-  // Sum PURCHASES, not rows: a 4-unit lot's $20 counts once, not four times.
-  const purchaseTotals = new Map<number, number>();
+  // Sum ORDERS, not rows: a 4-unit lot's $20 counts once, not four times.
+  const orderTotals = new Map<number, number>();
   for (const it of visible) {
-    if (it.purchase?.total_price != null) {
-      purchaseTotals.set(it.purchase.id, Number(it.purchase.total_price));
+    if (it.order?.total_price != null) {
+      orderTotals.set(it.order.id, Number(it.order.total_price));
     }
   }
-  const totalSpent = [...purchaseTotals.values()].reduce((a, b) => a + b, 0);
+  const totalSpent = [...orderTotals.values()].reduce((a, b) => a + b, 0);
 
   return (
     <main>
@@ -131,7 +131,7 @@ export default function InventoryView({
       <div className="ref-controls">
         <input
           className="ref-search"
-          placeholder="Search model, serial, location, purchase, notes…"
+          placeholder="Search model, serial, location, order, notes…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -180,7 +180,7 @@ export default function InventoryView({
               <SortTh label="ID" k="ref" sort={sort} onToggle={toggle} />
               <SortTh label="Device" k="device" sort={sort} onToggle={toggle} />
               <th>Location</th>
-              <SortTh label="Purchase" k="purchase" sort={sort} onToggle={toggle} />
+              <SortTh label="Order" k="order" sort={sort} onToggle={toggle} />
               <SortTh label="Acquired" k="acquired" sort={sort} onToggle={toggle} className="num" />
               <SortTh label="Arrived" k="arrived" sort={sort} onToggle={toggle} />
               <th>Status</th>
@@ -200,13 +200,13 @@ export default function InventoryView({
                 </td>
                 <td>{item.location ?? "—"}</td>
                 <td>
-                  {item.purchase ? (
+                  {item.order ? (
                     <Link
-                      href={purchaseHref(item.purchase)}
+                      href={orderHref(item.order)}
                       className="cell-link"
-                      title={purchaseLabel(item.purchase)}
+                      title={orderLabel(item.order)}
                     >
-                      {purchaseShort(item.purchase)}
+                      {orderShort(item.order)}
                     </Link>
                   ) : (
                     "—"
@@ -215,7 +215,7 @@ export default function InventoryView({
                 <td
                   className="num"
                   title={[
-                    item.purchase ? `lot: ${formatPrice(item.purchase.total_price)}` : null,
+                    item.order ? `lot: ${formatPrice(item.order.total_price)}` : null,
                     item.cost_override !== null ? "explicit unit cost (override)" : null,
                   ]
                     .filter(Boolean)
@@ -224,8 +224,8 @@ export default function InventoryView({
                   {formatPrice(item.unit_cost)}
                 </td>
                 <td>
-                  {item.purchase?.arrived_on
-                    ? formatDate(item.purchase.arrived_on)
+                  {item.order?.arrived_on
+                    ? formatDate(item.order.arrived_on)
                     : "—"}
                 </td>
                 <td>

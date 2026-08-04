@@ -17,7 +17,7 @@ export default async function InventoryPage({
     locations: [],
     sources: [],
     people: [],
-    purchases: [],
+    orders: [],
     statuses: [],
   };
   let error: string | null = null;

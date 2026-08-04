@@ -2,15 +2,15 @@
 
 from rest_framework import serializers
 
-from repairs.models import DeviceReference, Purchase, Revision, StockIntake, StockItem
+from repairs.models import DeviceReference, Order, Revision, StockIntake, StockItem
 
 
 class StockIntakeSerializer(serializers.ModelSerializer):
-    purchase_label = serializers.CharField(source="purchase.__str__", read_only=True)
+    order_label = serializers.CharField(source="order.__str__", read_only=True)
 
     class Meta:
         model = StockIntake
-        fields = ["id", "purchase", "purchase_label", "quantity", "note", "created_at"]
+        fields = ["id", "order", "order_label", "quantity", "note", "created_at"]
 
 
 class StockItemSerializer(serializers.ModelSerializer):
@@ -84,14 +84,14 @@ class StockItemWriteSerializer(serializers.ModelSerializer):
 class StockIntakeWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockIntake
-        fields = ["id", "purchase", "stock_item", "quantity", "note"]
+        fields = ["id", "order", "stock_item", "quantity", "note"]
 
-    def validate_purchase(self, purchase):
-        if purchase.kind != Purchase.Kind.PARTS:
+    def validate_order(self, order):
+        if order.kind != Order.Kind.PARTS:
             raise serializers.ValidationError(
-                "Intakes come from parts purchases — device lots become Device rows."
+                "Intakes come from parts orders — device lots become Device rows."
             )
-        return purchase
+        return order
 
 
 class RecountSerializer(serializers.Serializer):

@@ -1,30 +1,30 @@
-import PurchasesCombo from "@/components/purchases/PurchasesCombo";
+import OrdersCombo from "@/components/orders/OrdersCombo";
 import { getCash, type CashSummary } from "@/lib/api/cash";
 import { getOptions, type Options } from "@/lib/api/options";
-import { getPurchases, type Purchase } from "@/lib/api/purchases";
+import { getOrders, type Order } from "@/lib/api/orders";
 
 export const dynamic = "force-dynamic";
 
-export default async function PurchasesPage({
+export default async function OrdersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; tab?: string }>;
 }) {
   const { q, tab } = await searchParams;
-  let purchases: Purchase[] = [];
+  let orders: Order[] = [];
   let options: Options = {
     references: [],
     locations: [],
     sources: [],
     people: [],
-    purchases: [],
+    orders: [],
     statuses: [],
   };
   let cash: CashSummary | null = null;
   let error: string | null = null;
   try {
-    [purchases, options, cash] = await Promise.all([
-      getPurchases(),
+    [orders, options, cash] = await Promise.all([
+      getOrders(),
       getOptions(),
       getCash(),
     ]);
@@ -33,13 +33,13 @@ export default async function PurchasesPage({
   }
 
   return (
-    <PurchasesCombo
-      purchases={purchases}
+    <OrdersCombo
+      orders={orders}
       options={options}
       cash={cash}
       error={error}
       initialQuery={q ?? ""}
-      initialTab={tab === "parts" ? "parts" : "device"}
+      initialTab={tab === "parts" || tab === "job" ? tab : "device"}
     />
   );
 }

@@ -21,7 +21,7 @@ from repairs.serializers import (
 STOCK_QUERYSET = StockItem.objects.prefetch_related(
     "fits_references",
     "fits_revisions__reference",
-    "intakes__purchase__source",
+    "intakes__order__source",
     "draws",
 )
 
@@ -70,7 +70,7 @@ class StockRecountView(APIView):
 
 
 class StockIntakeCreateView(CreateAPIView):
-    """POST units entering a bucket from a parts purchase."""
+    """POST units entering a bucket from a parts order."""
 
     serializer_class = StockIntakeWriteSerializer
     queryset = StockIntake.objects.all()

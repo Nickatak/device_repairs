@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-// Shared column-sort machinery for the list views (purchases, inventory).
+// Shared column-sort machinery for the list views (orders, inventory).
 // Click cycle per column: ascending → descending → off. Unknown values
 // (null) always sort last, whichever the direction.
 

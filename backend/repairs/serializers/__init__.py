@@ -4,7 +4,7 @@ Inventory list/create + device detail (with nested repairs and steps) on the rea
 side; device and step write paths for the create/edit modals. Media uploads land
 via the API since 2026-07-24 (GPS-stripped, EXIF taken_at); Parts stay admin-side.
 
-Split by domain (2026-07-22), mirroring models/: purchases, reference, inventory,
+Split by domain (2026-07-22), mirroring models/: orders, reference, inventory,
 repairlog. This barrel keeps `from repairs.serializers import X` working.
 """
 
@@ -17,11 +17,11 @@ from .inventory import (
     DeviceWriteSerializer,
     InventoryDeviceSerializer,
 )
-from .purchases import (
-    PurchaseDetailSerializer,
-    PurchaseSerializer,
-    PurchaseUnitSerializer,
-    PurchaseWriteSerializer,
+from .orders import (
+    OrderDetailSerializer,
+    OrderSerializer,
+    OrderUnitSerializer,
+    OrderWriteSerializer,
 )
 from .reference import (
     STALE_AFTER_DAYS,
@@ -78,10 +78,10 @@ __all__ = [
     "NoteSerializer",
     "NoteTemplateSerializer",
     "NoteWriteSerializer",
-    "PurchaseDetailSerializer",
-    "PurchaseSerializer",
-    "PurchaseUnitSerializer",
-    "PurchaseWriteSerializer",
+    "OrderDetailSerializer",
+    "OrderSerializer",
+    "OrderUnitSerializer",
+    "OrderWriteSerializer",
     "RecountSerializer",
     "RepairCreateSerializer",
     "RepairWithNotesSerializer",

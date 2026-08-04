@@ -10,7 +10,7 @@ export interface DeviceWrite {
   revision: number | null;
   serial: string;
   location: string;
-  purchase: number | null;
+  order: number | null;
   // Create-only: spawns the device's first note chunk. Edits go through
   // the device-note actions — the backend 400s a PATCH that sends notes.
   notes: string;
@@ -25,21 +25,21 @@ export interface BulkLine {
 }
 
 export interface BulkDeviceWrite {
-  purchase: number | null;
+  order: number | null;
   location: string;
   notes: string;
   status: string;
   lines: BulkLine[];
 }
 
-export interface PurchaseWrite {
-  kind: "device" | "parts";
+export interface OrderWrite {
+  kind: "device" | "parts" | "job";
   label: string;
   source: string;
   order_ref: string;
   url: string;
   total_price: string | null;
-  purchased_on: string | null;
+  ordered_on: string | null;
   arrived_on: string | null;
   from_who: string;
   expected_units: number | null;
@@ -64,22 +64,22 @@ export async function createDevice(data: DeviceWrite): Promise<WriteResult> {
 }
 
 export async function bulkCreateDevices(data: BulkDeviceWrite): Promise<WriteResult> {
-  return send(`${API_BASE}/inventory/bulk/`, "POST", data, ["/purchases", "/"]);
+  return send(`${API_BASE}/inventory/bulk/`, "POST", data, ["/orders", "/"]);
 }
 
-// Purchases render on two tabs (device lots / parts orders), their own detail
+// Orders render on two tabs (device lots / parts orders), their own detail
 // pages, AND inside inventory rows — refresh all of them.
-export async function createPurchase(data: PurchaseWrite): Promise<WriteResult> {
-  return send(`${API_BASE}/purchases/`, "POST", data, ["/purchases", "/parts", "/"]);
+export async function createOrder(data: OrderWrite): Promise<WriteResult> {
+  return send(`${API_BASE}/orders/`, "POST", data, ["/orders", "/parts", "/"]);
 }
 
-export async function updatePurchase(
+export async function updateOrder(
   id: number,
-  data: PurchaseWrite,
+  data: OrderWrite,
 ): Promise<WriteResult> {
-  return send(`${API_BASE}/purchases/${id}/`, "PATCH", data, [
-    "/purchases",
-    `/purchases/${id}`,
+  return send(`${API_BASE}/orders/${id}/`, "PATCH", data, [
+    "/orders",
+    `/orders/${id}`,
     "/parts",
     "/",
   ]);
@@ -91,9 +91,9 @@ export async function markArrived(
   id: number,
   date: string | null,
 ): Promise<WriteResult> {
-  return send(`${API_BASE}/purchases/${id}/arrive/`, "POST", date ? { date } : {}, [
-    "/purchases",
-    `/purchases/${id}`,
+  return send(`${API_BASE}/orders/${id}/arrive/`, "POST", date ? { date } : {}, [
+    "/orders",
+    `/orders/${id}`,
     "/",
   ]);
 }
@@ -115,7 +115,7 @@ export async function createExit(
 ): Promise<WriteResult> {
   return send(`${API_BASE}/exits/`, "POST", { device: deviceId, ...data }, [
     `/devices/${deviceId}`,
-    "/purchases",
+    "/orders",
     "/",
   ]);
 }
@@ -127,7 +127,7 @@ export async function updateExit(
 ): Promise<WriteResult> {
   return send(`${API_BASE}/exits/${exitId}/`, "PATCH", data, [
     `/devices/${deviceId}`,
-    "/purchases",
+    "/orders",
     "/",
   ]);
 }
@@ -163,7 +163,7 @@ export async function recountStockItem(
 }
 
 export interface StockIntakeWrite {
-  purchase: number;
+  order: number;
   stock_item: number;
   quantity: number;
   note: string;

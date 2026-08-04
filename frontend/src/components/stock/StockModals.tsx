@@ -10,9 +10,9 @@ import {
   type StockItemWrite,
 } from "@/app/actions";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
+import type { Order } from "@/lib/api/orders";
 import { STOCK_STATES, type FitsLink, type StockItem } from "@/lib/api/stock";
-import { purchaseLabel } from "@/lib/purchase-format";
+import { orderLabel } from "@/lib/order-format";
 import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 import Modal from "@/components/ui/Modal";
 import { formEnterGuard } from "@/components/ui/formKeys";
@@ -223,30 +223,30 @@ export function StockModal({
 
 export function IntakeModal({
   item,
-  partsPurchases,
+  partsOrders,
   onClose,
 }: {
   item: StockItem;
-  partsPurchases: Purchase[];
+  partsOrders: Order[];
   onClose: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [purchase, setPurchase] = useState<number | null>(null);
+  const [order, setOrder] = useState<number | null>(null);
   const [quantity, setQuantity] = useState("");
   const [note, setNote] = useState("");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (purchase === null) {
-      setError("Pick the parts purchase this came from.");
+    if (order === null) {
+      setError("Pick the parts order this came from.");
       return;
     }
     setError(null);
     startTransition(async () => {
       const result = await createStockIntake({
-        purchase,
+        order,
         stock_item: item.id,
         quantity: Number(quantity),
         note,
@@ -265,12 +265,12 @@ export function IntakeModal({
       <h2>Intake — {item.name}</h2>
       <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         <label>
-          From parts purchase
+          From parts order
           <Combobox
-            value={purchase}
-            items={partsPurchases}
-            onChange={setPurchase}
-            label={purchaseLabel}
+            value={order}
+            items={partsOrders}
+            onChange={setOrder}
+            label={orderLabel}
             sublabel={(p) => p.note}
             haystack={(p) => `${p.label} ${p.source ?? ""} ${p.order_ref} ${p.note}`}
             placeholder="Search parts orders…"

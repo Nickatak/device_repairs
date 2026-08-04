@@ -3,7 +3,7 @@
 from django.core.management import call_command
 from django.test import TestCase
 
-from repairs.models import CompPull, Device, DeviceNote, DeviceReference, Lane, Purchase
+from repairs.models import CompPull, Device, DeviceNote, DeviceReference, Lane, Order
 
 from .helpers import make_ref
 
@@ -61,24 +61,24 @@ class SeedPricesheetTests(TestCase):
         self.assertEqual(pull.pulled_on.isoformat(), "2026-07-13")
 
 
-class SeedPurchasesTests(TestCase):
+class SeedOrdersTests(TestCase):
     """The tracking-CSV import: idempotent, source-splitting, ignore-respecting."""
 
     def test_import_is_idempotent_and_splits_sources(self):
-        call_command("seed_purchases")
-        count = Purchase.objects.count()
+        call_command("seed_orders")
+        count = Order.objects.count()
         self.assertGreater(count, 30)
         # The custody row (ignore flagged) never imports.
-        self.assertFalse(Purchase.objects.filter(ledger_ref="0030").exists())
+        self.assertFalse(Order.objects.filter(ledger_ref="0030").exists())
         # Marketplace cell splits into channel + refs: a long bare number is a
         # LISTING id (not stored — it survives only in the fallback URL).
-        lot = Purchase.objects.get(ledger_ref="0004")
+        lot = Order.objects.get(ledger_ref="0004")
         self.assertEqual(lot.source.name, "eBay")
         self.assertEqual(lot.order_ref, "")
         self.assertEqual(lot.url, "https://www.ebay.com/itm/168422045256")
         self.assertEqual(lot.expected_units, 4)
         # Full combined form: the ORDER number wins the URL; seller → from_who.
-        full = Purchase.objects.get(ledger_ref="0034")
+        full = Order.objects.get(ledger_ref="0034")
         self.assertEqual(full.order_ref, "27-14860-22553")
         self.assertEqual(
             full.url, "https://order.ebay.com/ord/show?orderId=27-14860-22553"
@@ -86,14 +86,14 @@ class SeedPurchasesTests(TestCase):
         self.assertEqual(full.from_who, "billnorseman22")
         # Non-marketplace cells alias to canonical channels (gifts = Friend;
         # pickup location detail moves to the note).
-        gift = Purchase.objects.get(ledger_ref="0006")
+        gift = Order.objects.get(ledger_ref="0006")
         self.assertEqual(gift.source.name, "Friend")
         self.assertEqual(gift.order_ref, "")
-        pickup = Purchase.objects.get(ledger_ref="0020")
+        pickup = Order.objects.get(ledger_ref="0020")
         self.assertEqual(pickup.source.name, "Local Pickup")
         self.assertIn("Upland", pickup.note)
-        call_command("seed_purchases")
-        self.assertEqual(Purchase.objects.count(), count)
+        call_command("seed_orders")
+        self.assertEqual(Order.objects.count(), count)
 
 
 class SeedPartsTests(TestCase):
@@ -101,11 +101,11 @@ class SeedPartsTests(TestCase):
 
     def test_import_is_idempotent_and_maps_fields(self):
         call_command("seed_parts")
-        count = Purchase.objects.filter(kind=Purchase.Kind.PARTS).count()
+        count = Order.objects.filter(kind=Order.Kind.PARTS).count()
         self.assertGreater(count, 60)
 
         # A fully-specified row: eBay order with URL, dated arrival.
-        halls = Purchase.objects.get(ledger_ref="parts-12")
+        halls = Order.objects.get(ledger_ref="parts-12")
         self.assertEqual(halls.kind, "parts")
         self.assertEqual(halls.label, "Hall-effect stick modules DS4 20-pack")
         self.assertEqual(halls.source.name, "eBay")
@@ -115,24 +115,24 @@ class SeedPartsTests(TestCase):
         self.assertEqual(halls.expected_units, 20)
         # AliExpress seller lands in the shared counterparty pool.
         self.assertEqual(
-            Purchase.objects.get(ledger_ref="parts-17").from_who, "Dragon Game 666"
+            Order.objects.get(ledger_ref="parts-17").from_who, "Dragon Game 666"
         )
         # The combined-cost screw pair: $17 on one line, $0 companion.
         self.assertEqual(
-            str(Purchase.objects.get(ledger_ref="parts-27").total_price), "17.00"
+            str(Order.objects.get(ledger_ref="parts-27").total_price), "17.00"
         )
         self.assertEqual(
-            str(Purchase.objects.get(ledger_ref="parts-28").total_price), "0.00"
+            str(Order.objects.get(ledger_ref="parts-28").total_price), "0.00"
         )
         # The two no-money-out CSV rows (cancelled, never-arrived) never import.
-        self.assertFalse(Purchase.objects.filter(ledger_ref="parts-06").exists())
-        self.assertFalse(Purchase.objects.filter(ledger_ref="parts-35").exists())
+        self.assertFalse(Order.objects.filter(ledger_ref="parts-06").exists())
+        self.assertFalse(Order.objects.filter(ledger_ref="parts-35").exists())
         # Cost-TBD rows import with null money.
-        self.assertIsNone(Purchase.objects.get(ledger_ref="parts-53").total_price)
+        self.assertIsNone(Order.objects.get(ledger_ref="parts-53").total_price)
 
         call_command("seed_parts")
         self.assertEqual(
-            Purchase.objects.filter(kind=Purchase.Kind.PARTS).count(), count
+            Order.objects.filter(kind=Order.Kind.PARTS).count(), count
         )
 
 
@@ -140,7 +140,7 @@ class SeedRepairsTests(TestCase):
     """The converted bench logs: idempotent, phase-dated, note/measurement upserts."""
 
     def test_seed_is_idempotent_and_backdates(self):
-        call_command("seed_purchases")
+        call_command("seed_orders")
         call_command("seed_units")
         call_command("seed_repairs")
         from repairs.models import Measurement, Note, Repair
@@ -172,12 +172,12 @@ class SeedUnitsTests(TestCase):
     """The units import: idempotent, lot-linking, status/label mapping."""
 
     def test_import_links_lots_and_maps_statuses(self):
-        call_command("seed_purchases")
+        call_command("seed_orders")
         call_command("seed_units")
         count = Device.objects.count()
         self.assertGreater(count, 70)
         unit = Device.objects.get(ledger_ref="0004-1")
-        self.assertEqual(unit.purchase.ledger_ref, "0004")
+        self.assertEqual(unit.order.ledger_ref, "0004")
         self.assertEqual(unit.status, "exited")  # ledger "sold" folds into exited
         # CSV note fields land as the unit's first DeviceNote chunk.
         unit_notes = unit.device_notes.get(position=0).text
@@ -186,11 +186,11 @@ class SeedUnitsTests(TestCase):
         self.assertIn("[bench label: CTRL_1]", unit_notes)
         # "in-repair" (CSV) → the generic Disassembled member (bench split 2026-07-24).
         self.assertTrue(Device.objects.filter(status="disassembled_diagnosing").exists())
-        # Multi-lot ledger_ids resolve: 0010 lives in purchase "0001;0010;0022".
+        # Multi-lot ledger_ids resolve: 0010 lives in order "0001;0010;0022".
         keyboard = Device.objects.get(ledger_ref="0010")
-        self.assertEqual(keyboard.purchase.ledger_ref, "0001;0010;0022")
+        self.assertEqual(keyboard.order.ledger_ref, "0001;0010;0022")
         # Lot arrival backfilled from earliest unit acquired date.
-        self.assertEqual(str(Device.objects.get(ledger_ref="0004-2").purchase.arrived_on), "2026-06-08")
+        self.assertEqual(str(Device.objects.get(ledger_ref="0004-2").order.arrived_on), "2026-06-08")
         chunk_count = DeviceNote.objects.count()
         call_command("seed_units")
         self.assertEqual(Device.objects.count(), count)

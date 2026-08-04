@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from repairs.models import Device, Exit, Purchase
+from repairs.models import Device, Exit, Order
 
 
 class ExitTests(TestCase):
@@ -67,7 +67,7 @@ class ExitTests(TestCase):
         self.assertEqual(payload["exits"][0]["net"], "42.87")
 
     def test_options_people_pool_includes_exit_counterparties(self):
-        Purchase.objects.create(from_who="seller_a")
+        Order.objects.create(from_who="seller_a")
         Exit.objects.create(device=Device.objects.create(), kind="sold", to_who="buyer_b")
         people = self.client.get("/api/v1/options/").json()["people"]
         self.assertIn("seller_a", people)
@@ -75,11 +75,11 @@ class ExitTests(TestCase):
 
 
 class CashSummaryTests(TestCase):
-    """Money out = all purchases; money in = exit sale money net of fees."""
+    """Money out = all orders; money in = exit sale money net of fees."""
 
     def test_rollup_math(self):
-        Purchase.objects.create(total_price=Decimal("100.00"))
-        Purchase.objects.create(kind="parts", total_price=Decimal("25.50"))
+        Order.objects.create(total_price=Decimal("100.00"))
+        Order.objects.create(kind="parts", total_price=Decimal("25.50"))
         d1, d2 = Device.objects.create(), Device.objects.create()
         Exit.objects.create(device=d1, kind="sold", sale_price=Decimal("60.00"), fees=Decimal("10.00"))
         Exit.objects.create(device=d2, kind="gifted")  # no money — must not crash the sums
@@ -90,7 +90,7 @@ class CashSummaryTests(TestCase):
         self.assertEqual(data["net"], "-75.50")
 
     def test_returned_refund_counts_as_money_in(self):
-        Purchase.objects.create(total_price=Decimal("40.00"))
+        Order.objects.create(total_price=Decimal("40.00"))
         device = Device.objects.create()
         Exit.objects.create(device=device, kind="returned", sale_price=Decimal("40.00"))
         data = self.client.get("/api/v1/cash/").json()

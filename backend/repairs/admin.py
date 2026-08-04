@@ -17,7 +17,7 @@ from .models import (
     Media,
     Note,
     Part,
-    Purchase,
+    Order,
     Repair,
     Revision,
     Source,
@@ -88,15 +88,15 @@ class NoteAdmin(admin.ModelAdmin):
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "status", "location", "purchase", "serial")
-    list_filter = ("status", "location", "purchase__source")
+    list_display = ("__str__", "status", "location", "order", "serial")
+    list_filter = ("status", "location", "order__source")
     search_fields = ("reference__brand", "reference__name", "serial")
-    autocomplete_fields = ("location", "reference", "purchase")
+    autocomplete_fields = ("location", "reference", "order")
 
 
-@admin.register(Purchase)
-class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "kind", "source", "total_price", "expected_units", "purchased_on", "created_at")
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "kind", "source", "total_price", "expected_units", "ordered_on", "created_at")
     list_filter = ("kind",)
     search_fields = ("label", "order_ref", "ledger_ref", "source__name", "note")
 
@@ -174,9 +174,9 @@ class SourceAdmin(admin.ModelAdmin):
 class StockIntakeInline(admin.TabularInline):
     model = StockIntake
     extra = 0
-    fields = ("purchase", "quantity", "note", "created_at")
+    fields = ("order", "quantity", "note", "created_at")
     readonly_fields = ("created_at",)
-    autocomplete_fields = ("purchase",)
+    autocomplete_fields = ("order",)
 
 
 @admin.register(StockItem)

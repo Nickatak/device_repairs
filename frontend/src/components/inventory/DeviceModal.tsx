@@ -53,7 +53,7 @@ export default function DeviceModal({
           set={set}
           options={options}
           createMode={!item}
-          currentPurchase={item?.purchase?.id ?? null}
+          currentOrder={item?.order?.id ?? null}
         />
 
         {error && <p className="error">{error}</p>}

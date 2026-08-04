@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateStockItem } from "@/app/actions";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
+import type { Order } from "@/lib/api/orders";
 import type { StockItem } from "@/lib/api/stock";
 import { formatDate } from "@/lib/format";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
@@ -124,13 +124,13 @@ function OnHand({ item }: { item: StockItem }) {
 
 export default function StockView({
   items,
-  partsPurchases,
+  partsOrders,
   options,
   error,
   initialQuery = "",
 }: {
   items: StockItem[];
-  partsPurchases: Purchase[];
+  partsOrders: Order[];
   options: Options;
   error: string | null;
   initialQuery?: string;
@@ -256,7 +256,7 @@ export default function StockView({
                   <td className="device">{item.name}</td>
                   <td>{item.category || "—"}</td>
                   <td>
-                    <span className="purchase-note" title={fits.join(" · ") || undefined}>
+                    <span className="order-note" title={fits.join(" · ") || undefined}>
                       {fits.length > 0 ? fits.join(" · ") : "—"}
                     </span>
                   </td>
@@ -269,7 +269,7 @@ export default function StockView({
                       : "—"}
                   </td>
                   <td>
-                    <span className="purchase-note" title={item.note || undefined}>
+                    <span className="order-note" title={item.note || undefined}>
                       {item.note || "—"}
                     </span>
                   </td>
@@ -317,7 +317,7 @@ export default function StockView({
       ) : modal?.mode === "intake" ? (
         <IntakeModal
           item={modal.item}
-          partsPurchases={partsPurchases}
+          partsOrders={partsOrders}
           onClose={() => setModal(null)}
         />
       ) : modal?.mode === "recount" ? (

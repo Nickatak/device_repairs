@@ -30,7 +30,7 @@ export function formatPrice(value: string | null): string {
   return `$${Number(value).toFixed(2)}`;
 }
 
-// Date-only values (e.g. purchased_on "2026-07-21") — split by hand so the
+// Date-only values (e.g. ordered_on "2026-07-21") — split by hand so the
 // UTC-midnight parse can't shift the day in local time.
 export function formatDate(iso: string): string {
   const [y, m, d] = iso.split("-");

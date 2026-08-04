@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { bulkCreateDevices, type BulkLine } from "@/app/actions";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
-import { purchaseLabel } from "@/lib/purchase-format";
+import type { Order } from "@/lib/api/orders";
+import { orderLabel } from "@/lib/order-format";
 import Modal from "@/components/ui/Modal";
 import { CREATE_STATUSES, ReferenceCombobox } from "./DeviceForm";
 import { TextCombobox } from "@/components/ui/Combobox";
@@ -17,11 +17,11 @@ type LineState = { reference: number | null; quantity: string };
 // line is one homogeneous slice (reference × quantity). Per-unit identity
 // (serial, cost override) is refined on each row afterward.
 export default function BulkAddModal({
-  purchase,
+  order,
   options,
   onClose,
 }: {
-  purchase: Purchase;
+  order: Order;
   options: Options;
   onClose: () => void;
 }) {
@@ -31,8 +31,8 @@ export default function BulkAddModal({
 
   // Prefill with the lot's remaining units when the expectation is known.
   const remaining =
-    purchase.expected_units !== null
-      ? Math.max(purchase.expected_units - purchase.device_count, 1)
+    order.expected_units !== null
+      ? Math.max(order.expected_units - order.device_count, 1)
       : 1;
 
   const [lines, setLines] = useState<LineState[]>([
@@ -40,7 +40,7 @@ export default function BulkAddModal({
   ]);
   const [location, setLocation] = useState("");
   // An arrived lot's units are on hand; an unarrived one's are inbound.
-  const [status, setStatus] = useState(purchase.arrived_on ? "acquired" : "shipped");
+  const [status, setStatus] = useState(order.arrived_on ? "acquired" : "shipped");
   const [notes, setNotes] = useState("");
 
   const statuses = options.statuses.filter((s) => CREATE_STATUSES.includes(s.value));
@@ -59,7 +59,7 @@ export default function BulkAddModal({
     }));
     startTransition(async () => {
       const result = await bulkCreateDevices({
-        purchase: purchase.id,
+        order: order.id,
         location,
         notes,
         status,
@@ -76,7 +76,7 @@ export default function BulkAddModal({
 
   return (
     <Modal onClose={onClose}>
-      <h2>Add devices — {purchaseLabel(purchase)}</h2>
+      <h2>Add devices — {orderLabel(order)}</h2>
       <form onKeyDown={formEnterGuard} onSubmit={onSubmit}>
         {lines.map((line, i) => (
           <div className="row" key={i}>

@@ -3,9 +3,9 @@
 import { useState } from "react";
 import type { InventoryItem } from "@/lib/api/inventory";
 import type { Options, ReferenceOption } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
+import type { Order } from "@/lib/api/orders";
 import type { DeviceWrite } from "@/app/actions";
-import { purchaseLabel } from "@/lib/purchase-format";
+import { orderLabel } from "@/lib/order-format";
 import { Combobox, TextCombobox } from "@/components/ui/Combobox";
 
 // New devices default to shipped: a row exists once it's bought and/or inbound.
@@ -14,7 +14,7 @@ const EMPTY = {
   revision: null as number | null,
   serial: "",
   location: "",
-  purchase: null as number | null,
+  order: null as number | null,
   notes: "",
   status: "shipped",
   cost_override: "",
@@ -37,7 +37,7 @@ export function useDeviceForm(item: InventoryItem | null) {
           revision: item.revision?.id ?? null,
           serial: item.serial,
           location: item.location ?? "",
-          purchase: item.purchase?.id ?? null,
+          order: item.order?.id ?? null,
           notes: item.notes,
           status: item.status,
           cost_override: item.cost_override ?? "",
@@ -55,7 +55,7 @@ export function useDeviceForm(item: InventoryItem | null) {
       revision: form.revision,
       serial: form.serial,
       location: form.location,
-      purchase: form.purchase,
+      order: form.order,
       notes: form.notes,
       status: form.status,
       cost_override: form.cost_override.trim() ? form.cost_override.trim() : null,
@@ -69,7 +69,7 @@ function refLabel(ref: ReferenceOption): string {
   return `${ref.brand} ${ref.name}`.trim();
 }
 
-function purchaseSub(p: Purchase): string {
+function orderSub(p: Order): string {
   return [
     p.note,
     p.expected_units !== null ? `${p.expected_units} units` : null,
@@ -83,7 +83,7 @@ function purchaseSub(p: Purchase): string {
 // Where this device lands in the selected lot's unit count, flagged when it
 // would overshoot the expected units (a 6/5th unit). `counted` = the device
 // already belongs to this lot, so saving doesn't add a row.
-function PurchaseCountHint({ p, counted }: { p: Purchase; counted: boolean }) {
+function OrderCountHint({ p, counted }: { p: Order; counted: boolean }) {
   const of = p.expected_units !== null ? ` / ${p.expected_units}` : "";
   if (counted) {
     return (
@@ -133,21 +133,21 @@ export function DeviceFields({
   set,
   options,
   createMode = false,
-  currentPurchase = null,
+  currentOrder = null,
 }: {
   form: DeviceFormState;
   set: <K extends keyof DeviceFormState>(key: K, value: DeviceFormState[K]) => void;
   options: Options;
   createMode?: boolean;
-  // The device's SAVED purchase id — lets the count hint tell "already in this
+  // The device's SAVED order id — lets the count hint tell "already in this
   // lot" apart from "would add a unit to it".
-  currentPurchase?: number | null;
+  currentOrder?: number | null;
 }) {
   const statuses = createMode
     ? options.statuses.filter((s) => CREATE_STATUSES.includes(s.value))
     : options.statuses;
-  const selectedPurchase =
-    options.purchases.find((p) => p.id === form.purchase) ?? null;
+  const selectedOrder =
+    options.orders.find((p) => p.id === form.order) ?? null;
   const revisions =
     options.references.find((r) => r.id === form.reference)?.revisions ?? [];
   return (
@@ -188,22 +188,22 @@ export function DeviceFields({
         <input value={form.serial} onChange={(e) => set("serial", e.target.value)} />
       </label>
       <label>
-        Purchase (lot)
+        Order (lot)
         <Combobox
-          value={form.purchase}
-          items={options.purchases}
-          onChange={(id) => set("purchase", id)}
-          label={purchaseLabel}
-          sublabel={purchaseSub}
+          value={form.order}
+          items={options.orders}
+          onChange={(id) => set("order", id)}
+          label={orderLabel}
+          sublabel={orderSub}
           haystack={(p) =>
             `${p.label} ${p.source ?? ""} ${p.order_ref} ${p.ledger_ref} ${p.total_price ?? ""} ${p.note}`
           }
-          placeholder="Search purchases… (blank = no buy record)"
+          placeholder="Search orders… (blank = no buy record)"
         />
-        {selectedPurchase && (
-          <PurchaseCountHint
-            p={selectedPurchase}
-            counted={selectedPurchase.id === currentPurchase}
+        {selectedOrder && (
+          <OrderCountHint
+            p={selectedOrder}
+            counted={selectedOrder.id === currentOrder}
           />
         )}
       </label>
@@ -228,7 +228,7 @@ export function DeviceFields({
           </select>
         </label>
       </div>
-      {form.purchase !== null && (
+      {form.order !== null && (
         <label className="narrow">
           Unit cost override
           <input

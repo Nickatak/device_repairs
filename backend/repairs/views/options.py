@@ -4,8 +4,8 @@ from django.db.models import F, Max
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from repairs.models import Device, DeviceReference, Exit, Location, Purchase, Source
-from repairs.serializers import PurchaseSerializer
+from repairs.models import Device, DeviceReference, Exit, Location, Order, Source
+from repairs.serializers import OrderSerializer
 
 
 class OptionsView(APIView):
@@ -45,25 +45,25 @@ class OptionsView(APIView):
                     .values_list("name", flat=True)
                 ),
                 "sources": list(Source.objects.values_list("name", flat=True)),
-                # Shared counterparty pool: everyone seen in purchases' from_who
+                # Shared counterparty pool: everyone seen in orders' from_who
                 # or exits' to_who feeds both comboboxes.
                 "people": sorted(
                     set(
-                        Purchase.objects.exclude(from_who="").values_list(
+                        Order.objects.exclude(from_who="").values_list(
                             "from_who", flat=True
                         )
                     )
                     | set(Exit.objects.exclude(to_who="").values_list("to_who", flat=True))
                 ),
-                # Buy events for the device form's purchase combobox, most
-                # recently placed first — device lots only; parts purchases
-                # never hold devices. Explicit nulls_last: Postgres would
-                # otherwise lead a DESC sort with the undated own-stock rows.
-                "purchases": PurchaseSerializer(
-                    Purchase.objects.filter(kind=Purchase.Kind.DEVICE)
+                # Device-holding orders for the device form's order combobox,
+                # most recently placed first — device lots and customer jobs;
+                # parts orders never hold devices. Explicit nulls_last: Postgres
+                # would otherwise lead a DESC sort with the undated own-stock rows.
+                "orders": OrderSerializer(
+                    Order.objects.exclude(kind=Order.Kind.PARTS)
                     .select_related("source")
                     .prefetch_related("devices")
-                    .order_by(F("purchased_on").desc(nulls_last=True), "-id"),
+                    .order_by(F("ordered_on").desc(nulls_last=True), "-id"),
                     many=True,
                 ).data,
                 "statuses": [

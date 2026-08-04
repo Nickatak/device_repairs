@@ -1,14 +1,14 @@
-"""Import buy events from the tracking ledger's devices/purchases.csv.
+"""Import buy events from the tracking ledger's devices/orders.csv.
 
 Snapshot import: copy the CSV from ~/learning/device_repair/tracking/devices/
-into repairs/data/device_purchases.csv and re-run — idempotent, keyed on the
-row's ledger_ids (stored as Purchase.ledger_ref), so re-running refreshes
-imported rows and never duplicates. Purchases entered directly on the site
+into repairs/data/device_orders.csv and re-run — idempotent, keyed on the
+row's ledger_ids (stored as Order.ledger_ref), so re-running refreshes
+imported rows and never duplicates. Orders entered directly on the site
 have a blank ledger_ref and are never touched.
 
-Mapping (CSV → Purchase):
+Mapping (CSV → Order):
     ledger_ids → ledger_ref (natural key)
-    date       → purchased_on
+    date       → ordered_on
     qty        → expected_units
     cost       → total_price
     source     → Source lookup + order_ref (leading channel name split off;
@@ -26,8 +26,9 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from repairs.models import Purchase, Source
+from repairs.models import Order, Source
 
+# Historical filename — the frozen CSV predates the Purchase→Order rename.
 DATA_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "device_purchases.csv"
 
 # Known marketplace channels — a source cell starting with one of these splits
@@ -109,7 +110,7 @@ def build_url(source_name, order, listing):
 
 
 class Command(BaseCommand):
-    help = "Import buy events from repairs/data/device_purchases.csv (idempotent)."
+    help = "Import buy events from repairs/data/device_orders.csv (idempotent)."
 
     def handle(self, *args, **options):
         created = updated = skipped = 0
@@ -132,7 +133,7 @@ class Command(BaseCommand):
                     note += "\n" + extra_note
                 if residual:
                     note += f"\n[ref detail: {residual}]"
-                _, made = Purchase.objects.update_or_create(
+                _, made = Order.objects.update_or_create(
                     ledger_ref=row["ledger_ids"].strip(),
                     defaults={
                         "source": source,
@@ -140,7 +141,7 @@ class Command(BaseCommand):
                         "url": build_url(source_name, order_ref, listing_ref),
                         "from_who": seller,
                         "total_price": Decimal(row["cost"]),
-                        "purchased_on": row["date"].strip() or None,
+                        "ordered_on": row["date"].strip() or None,
                         "expected_units": int(row["qty"]),
                         "note": note,
                     },
@@ -148,5 +149,5 @@ class Command(BaseCommand):
                 created += made
                 updated += not made
         self.stdout.write(
-            f"Done — purchases: {created} created, {updated} refreshed, {skipped} skipped (ignore)."
+            f"Done — orders: {created} created, {updated} refreshed, {skipped} skipped (ignore)."
         )

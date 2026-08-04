@@ -10,7 +10,7 @@ from io import StringIO
 from django.core.management import CommandError, call_command
 from django.test import TestCase
 
-from repairs.models import CompPull, Device, Purchase, StockItem
+from repairs.models import CompPull, Device, Order, StockItem
 
 from .helpers import make_ref
 
@@ -46,7 +46,7 @@ class SeedDevTests(TestCase):
         self.assertTrue(
             all(s.startswith("TEST-") for s in Device.objects.values_list("serial", flat=True))
         )
-        self.assertEqual(Purchase.objects.count(), 2)
+        self.assertEqual(Order.objects.count(), 2)
         self.assertEqual(StockItem.objects.count(), 2)
         self.assertEqual(CompPull.objects.count(), 2)
         self.assertIsNotNone(Device.objects.get(serial="TEST-0001").reference)
@@ -60,7 +60,7 @@ class SeedDevTests(TestCase):
 
     def test_ledger_content_is_labeled(self):
         self.run_seed()
-        for note in Purchase.objects.values_list("note", flat=True):
+        for note in Order.objects.values_list("note", flat=True):
             self.assertIn("TEST DATA", note)
         for note in CompPull.objects.values_list("note", flat=True):
             self.assertIn("TEST comp", note)

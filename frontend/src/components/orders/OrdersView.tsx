@@ -4,20 +4,20 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { CashSummary } from "@/lib/api/cash";
 import type { Options } from "@/lib/api/options";
-import type { Purchase } from "@/lib/api/purchases";
+import type { Order } from "@/lib/api/orders";
 import { formatDate, formatPrice } from "@/lib/format";
-import PurchaseModal from "./PurchaseModal";
+import OrderModal from "./OrderModal";
 import BulkAddModal from "@/components/inventory/BulkAddModal";
 import { Pagination, usePagination } from "@/components/ui/Pagination";
 import { SortTh, applySort, useSort } from "@/components/ui/sorting";
 
 type ModalState =
   | { mode: "create" }
-  | { mode: "edit"; item: Purchase }
-  | { mode: "bulk"; item: Purchase }
+  | { mode: "edit"; item: Order }
+  | { mode: "bulk"; item: Order }
   | null;
 
-function matches(p: Purchase, query: string): boolean {
+function matches(p: Order, query: string): boolean {
   if (!query) return true;
   const haystack = [
     p.kind,
@@ -29,7 +29,7 @@ function matches(p: Purchase, query: string): boolean {
     p.from_who,
     p.note,
     p.total_price ?? "",
-    p.purchased_on ?? "",
+    p.ordered_on ?? "",
     p.arrived_on ?? "",
   ]
     .join(" ")
@@ -42,11 +42,11 @@ function matches(p: Purchase, query: string): boolean {
 }
 
 // Entered device rows disagree with the lot's expected count — under (4/5)
-// or over (6/5). The reconcile-audit signal. Device lots only: parts
-// purchases never hold device rows, so 0-of-N is their normal state.
-function mismatched(p: Purchase): boolean {
+// or over (6/5). The reconcile-audit signal. Device lots and jobs: parts
+// orders never hold device rows, so 0-of-N is their normal state.
+function mismatched(p: Order): boolean {
   return (
-    p.kind === "device" &&
+    p.kind !== "parts" &&
     p.expected_units !== null &&
     p.device_count !== p.expected_units
   );
@@ -59,31 +59,32 @@ function refFromUrl(url: string): string {
   return tail.includes("=") ? (tail.split("=").pop() ?? "") : tail;
 }
 
-type SortKey = "source" | "units" | "purchased" | "arrived";
+type SortKey = "source" | "units" | "ordered" | "arrived";
 
-function sortValue(p: Purchase, key: SortKey): string | number | null {
+function sortValue(p: Order, key: SortKey): string | number | null {
   switch (key) {
     case "source":
       return p.source;
     case "units":
       return p.expected_units ?? p.device_count;
-    case "purchased":
-      return p.purchased_on;
+    case "ordered":
+      return p.ordered_on;
     case "arrived":
       return p.arrived_on;
   }
 }
 
-// One component, two tabs: /purchases renders kind="device" (lots that split
-// into device rows), /parts renders kind="parts" (the loose parts ledger).
+// One component, three tabs: kind="device" (lots that split into device
+// rows), kind="parts" (the loose parts ledger), kind="job" (customer work
+// orders — device-shaped, $0, fee rides the exit).
 // Signed money display for the net line: -$75.50, not $-75.50.
 function signedPrice(value: string): string {
   const n = Number(value);
   return `${n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
 }
 
-export default function PurchasesView({
-  purchases: allPurchases,
+export default function OrdersView({
+  orders: allOrders,
   options,
   error,
   initialQuery = "",
@@ -92,40 +93,41 @@ export default function PurchasesView({
   title = null,
   tabs = null,
 }: {
-  purchases: Purchase[];
+  orders: Order[];
   options: Options;
   error: string | null;
   initialQuery?: string;
-  kind?: Purchase["kind"];
-  // Whole-project cash position (money in vs out) — /purchases only.
+  kind?: Order["kind"];
+  // Whole-project cash position (money in vs out) — /orders only.
   cash?: CashSummary | null;
   // Combo-page hooks: a stable h1 override + the tab bar rendered above the header.
   title?: string | null;
   tabs?: React.ReactNode;
 }) {
   const parts = kind === "parts";
-  const purchases = useMemo(
-    () => allPurchases.filter((p) => p.kind === kind),
-    [allPurchases, kind],
+  const jobs = kind === "job";
+  const orders = useMemo(
+    () => allOrders.filter((p) => p.kind === kind),
+    [allOrders, kind],
   );
   const [modal, setModal] = useState<ModalState>(null);
-  // Deep-linkable: /purchases?q=0004 lands with the search prefilled.
+  // Deep-linkable: /orders?q=0004 lands with the search prefilled.
   const [query, setQuery] = useState(initialQuery);
   const [sourceFilter, setSourceFilter] = useState<string | null>(null);
   const [arrival, setArrival] = useState<"all" | "onhand" | "inbound">("all");
   const [mismatchOnly, setMismatchOnly] = useState(false);
-  // Default view — device lots: most recently PURCHASED first (the buy event is
+  // Default view — device lots: most recently ORDERED first (the buy event is
   // the ledger's grain); parts orders: most recently arrived (arrival is the
   // state that tab answers). Unknown dates sort to the bottom either way.
   const { sort, toggle } = useSort<SortKey>(
-    parts ? { key: "arrived", dir: -1 } : { key: "purchased", dir: -1 },
+    parts ? { key: "arrived", dir: -1 } : { key: "ordered", dir: -1 },
   );
 
   const sources = useMemo(
-    () => [...new Set(purchases.map((p) => p.source ?? "—"))].sort(),
-    [purchases],
+    () => [...new Set(orders.map((p) => p.source ?? "—"))].sort(),
+    [orders],
   );
-  const visible = purchases.filter(
+  const visible = orders.filter(
     (p) =>
       matches(p, query) &&
       (sourceFilter === null || (p.source ?? "—") === sourceFilter) &&
@@ -138,7 +140,7 @@ export default function PurchasesView({
 
   const pager = usePagination(visible);
 
-  const filtered = visible.length !== purchases.length;
+  const filtered = visible.length !== orders.length;
   const totalSpent = visible.reduce(
     (sum, p) => sum + (p.total_price ? Number(p.total_price) : 0),
     0,
@@ -149,24 +151,26 @@ export default function PurchasesView({
       {tabs}
       <header className="page-head">
         <div>
-          <h1>{title ?? (parts ? "Parts Orders" : "Purchases")}</h1>
+          <h1>{title ?? (parts ? "Parts Orders" : jobs ? "Jobs" : "Orders")}</h1>
           <p className="subtitle">
             {filtered
-              ? `${visible.length} of ${purchases.length} ${parts ? "parts orders" : "buy events"}`
-              : `${purchases.length} ${parts ? "parts order" : "buy event"}${purchases.length === 1 ? "" : "s"}`}{" "}
+              ? `${visible.length} of ${orders.length} ${parts ? "parts orders" : jobs ? "jobs" : "buy events"}`
+              : `${orders.length} ${parts ? "parts order" : jobs ? "job" : "buy event"}${orders.length === 1 ? "" : "s"}`}{" "}
             {parts
               ? "— ordered at some point; arrival is the state"
-              : "— money lives here; devices split the lot"}
+              : jobs
+                ? "— customer property in for service; the fee rides the exit"
+                : "— money lives here; devices split the lot"}
           </p>
           {cash && (
-            <p className="subtitle" title={`${cash.purchase_count} purchases · ${cash.exit_count} exits`}>
+            <p className="subtitle" title={`${cash.order_count} orders · ${cash.exit_count} exits`}>
               Cash position: {signedPrice(cash.money_out)} out ·{" "}
               {signedPrice(cash.money_in)} in · net {signedPrice(cash.net)}
             </p>
           )}
         </div>
         <button className="btn-primary" onClick={() => setModal({ mode: "create" })}>
-          {parts ? "+ Parts order" : "+ Purchase"}
+          {parts ? "+ Parts order" : jobs ? "+ Job" : "+ Order"}
         </button>
       </header>
 
@@ -221,15 +225,17 @@ export default function PurchasesView({
       </div>
 
       {error ? (
-        <p className="error">Could not load purchases: {error}</p>
-      ) : purchases.length === 0 ? (
+        <p className="error">Could not load orders: {error}</p>
+      ) : orders.length === 0 ? (
         <p className="empty">
           {parts
             ? "No parts orders yet — record your first."
-            : "No purchases yet — record your first buy."}
+            : jobs
+              ? "No jobs yet — record your first customer intake."
+              : "No orders yet — record your first buy."}
         </p>
       ) : visible.length === 0 ? (
-        <p className="empty">No purchases match.</p>
+        <p className="empty">No orders match.</p>
       ) : (
         <table>
           <thead>
@@ -239,7 +245,7 @@ export default function PurchasesView({
               <th>Item</th>
               <th className="num">Total</th>
               <SortTh label={parts ? "Qty" : "Units"} k="units" sort={sort} onToggle={toggle} className="num" />
-              <SortTh label="Purchased" k="purchased" sort={sort} onToggle={toggle} />
+              <SortTh label="Ordered" k="ordered" sort={sort} onToggle={toggle} />
               <SortTh label="Arrived" k="arrived" sort={sort} onToggle={toggle} />
               <th>Note</th>
               <th aria-label="actions"></th>
@@ -249,7 +255,7 @@ export default function PurchasesView({
             {pager.paged.map((p) => (
               <tr key={p.id} className="row-link">
                 <td className="device">
-                  <Link href={`/purchases/${p.id}`} className="row-link-anchor">
+                  <Link href={`/orders/${p.id}`} className="row-link-anchor">
                     {p.source ?? "—"}
                   </Link>
                 </td>
@@ -271,7 +277,7 @@ export default function PurchasesView({
                   )}
                 </td>
                 <td>
-                  <span className="purchase-note" title={p.label || undefined}>
+                  <span className="order-note" title={p.label || undefined}>
                     {p.label || "—"}
                   </span>
                 </td>
@@ -297,7 +303,7 @@ export default function PurchasesView({
                       : p.device_count}
                   </td>
                 )}
-                <td>{p.purchased_on ? formatDate(p.purchased_on) : "—"}</td>
+                <td>{p.ordered_on ? formatDate(p.ordered_on) : "—"}</td>
                 <td>
                   {p.arrived_on ? (
                     formatDate(p.arrived_on)
@@ -311,13 +317,13 @@ export default function PurchasesView({
                   )}
                 </td>
                 <td>
-                  <span className="purchase-note" title={p.note}>
+                  <span className="order-note" title={p.note}>
                     {p.note || "—"}
                   </span>
                 </td>
                 <td className="num">
                   <span className="row-actions">
-                    {p.kind === "device" && (
+                    {p.kind !== "parts" && (
                       <button
                         className="btn-edit"
                         onClick={() => setModal({ mode: "bulk", item: p })}
@@ -349,12 +355,12 @@ export default function PurchasesView({
 
       {modal && modal.mode === "bulk" ? (
         <BulkAddModal
-          purchase={modal.item}
+          order={modal.item}
           options={options}
           onClose={() => setModal(null)}
         />
       ) : modal ? (
-        <PurchaseModal
+        <OrderModal
           item={modal.mode === "edit" ? modal.item : null}
           options={options}
           defaultKind={kind}

@@ -1,4 +1,4 @@
-"""Purchases ledger — money enters here. Purchase (the buy event) + Source (channel lookup)."""
+"""Orders ledger — money out lives here. Order (the intake event) + Source (channel lookup)."""
 
 from decimal import Decimal
 
@@ -6,9 +6,9 @@ from django.db import models
 
 
 class Source(models.Model):
-    """Reusable channel a purchase came through (eBay, FB Marketplace, own stock).
+    """Reusable channel an order came through (eBay, FB Marketplace, Customer).
 
-    Thin lookup: money and order identity live on Purchase, not here.
+    Thin lookup: money and order identity live on Order, not here.
     """
 
     name = models.CharField(max_length=120, unique=True)
@@ -18,10 +18,12 @@ class Source(models.Model):
         return self.name
 
 
-class Purchase(models.Model):
-    """A buy event at order/shipping-intake grain — MONEY LIVES HERE, not on Device.
+class Order(models.Model):
+    """A batch entering the bench, at order/shipping-intake grain — MONEY OUT
+    LIVES HERE, not on Device. Renamed from Purchase 2026-08-04: buys, gifts,
+    own-stock seeds, and customer work orders are all instances of it.
 
-    'ebay order 13-14739-66407, $37.87, 3x controllers' is ONE purchase; its units
+    'ebay order 13-14739-66407, $37.87, 3x controllers' is ONE order; its units
     become Device rows as identity firms up on arrival (lot → exact models). The
     per-unit cost is derived — total split evenly across the lot — never stored.
 
@@ -29,11 +31,18 @@ class Purchase(models.Model):
     questions they answer are 'did I order this at some point' and 'has it arrived'
     — no stock counts, no line items. Nothing hangs off them; `label` is their
     identity and expected_units doubles as the piece count.
+
+    kind='job' rows are customer work orders (first job 2026-08-04):
+    device-shaped — units hang off them like a device lot — but the units are
+    customer property, total_price is 0 (nothing was bought), and the service
+    fee rides the Exit when the unit goes home. kind therefore mixes two axes
+    (payload shape vs ownership) — deliberate at current scale.
     """
 
     class Kind(models.TextChoices):
         DEVICE = "device", "Devices"
         PARTS = "parts", "Parts"
+        JOB = "job", "Jobs"
         # materials joins here when that CSV layer migrates.
 
     kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.DEVICE)
@@ -42,11 +51,11 @@ class Purchase(models.Model):
         blank=True,
         help_text=(
             "One-line 'what is this' ('DS4 hall module 20-pack'). The identity of "
-            "a parts purchase; optional color for device lots."
+            "a parts order; optional color for device lots."
         ),
     )
     source = models.ForeignKey(
-        Source, null=True, blank=True, on_delete=models.SET_NULL, related_name="purchases"
+        Source, null=True, blank=True, on_delete=models.SET_NULL, related_name="orders"
     )
     order_ref = models.CharField(
         max_length=200,
@@ -66,7 +75,7 @@ class Purchase(models.Model):
         help_text=(
             "ledger_ids from the tracking CSV this row was imported from "
             "('0004', '0001;0010;0022'). Seed idempotency key; blank for "
-            "purchases entered directly on the site."
+            "orders entered directly on the site."
         ),
     )
     total_price = models.DecimalField(
@@ -76,7 +85,7 @@ class Purchase(models.Model):
         blank=True,
         help_text="What the whole lot cost. 0 = own stock; null = unknown.",
     )
-    purchased_on = models.DateField(null=True, blank=True)
+    ordered_on = models.DateField(null=True, blank=True)
     arrived_on = models.DateField(
         null=True, blank=True, help_text="When the lot physically landed. Null = not yet / unknown."
     )
@@ -100,7 +109,7 @@ class Purchase(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-purchased_on", "-id"]
+        ordering = ["-ordered_on", "-id"]
 
     def __str__(self):
         if self.label:
@@ -108,7 +117,7 @@ class Purchase(models.Model):
         parts = [str(self.source) if self.source else None, self.order_ref or None]
         if self.total_price is not None:
             parts.append(f"${self.total_price}")
-        return " ".join(p for p in parts if p) or f"purchase #{self.pk}"
+        return " ".join(p for p in parts if p) or f"order #{self.pk}"
 
     @property
     def unit_price(self):
